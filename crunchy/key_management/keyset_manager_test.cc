@@ -1,0 +1,225 @@
+// Copyright 2017 The CrunchyCrypt Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "crunchy/key_management/keyset_manager.h"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include "crunchy/internal/algs/random/crypto_rand.h"
+#include "crunchy/crunchy_crypter.h"
+#include "crunchy/internal/common/status_matchers.h"
+#include "crunchy/internal/keys/key_util.h"
+#include "crunchy/util/status.h"
+
+namespace crunchy {
+
+namespace {
+
+class KeysetManagerTest : public ::testing::TestWithParam<std::string> {};
+
+TEST_P(KeysetManagerTest, GenerateAndAddNewKeyAsPrimary) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle = status_or_key_handle.ValueOrDie();
+  CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));
+
+  EXPECT_EQ(1, keyset_manager->KeyHandles().size());
+  EXPECT_EQ(GetParam(), key_handle->metadata().type().google_key_type_label());
+  EXPECT_EQ(key_handle, keyset_manager->PrimaryKey());
+}
+
+TEST_P(KeysetManagerTest, GenerateAndAddNewKeyAsPrimaryWithPrefix) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+
+  const std::string key_prefix = RandString(32);
+  auto status_or_key_handle =
+      keyset_manager->GenerateAndAddNewKey(GetParam(), key_prefix);
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle = status_or_key_handle.ValueOrDie();
+  CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));
+
+  EXPECT_EQ(1, keyset_manager->KeyHandles().size());
+  EXPECT_EQ(GetParam(), key_handle->metadata().type().google_key_type_label());
+  EXPECT_EQ(key_prefix, key_handle->metadata().prefix());
+  EXPECT_EQ(key_handle, keyset_manager->PrimaryKey());
+}
+
+TEST_P(KeysetManagerTest, GenerateOneAndPromoteNextToPrimary) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle = keyset_manager->PromoteNextToPrimary().ValueOrDie();
+
+  EXPECT_EQ(1, keyset_manager->KeyHandles().size());
+  EXPECT_EQ(key_handle, keyset_manager->PrimaryKey());
+}
+
+TEST_P(KeysetManagerTest, GenerateTwoAndPromoteNextToPrimary) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle = status_or_key_handle.ValueOrDie();
+  CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));
+  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  key_handle = status_or_key_handle.ValueOrDie();
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  CRUNCHY_EXPECT_OK(keyset_manager->PromoteNextToPrimary());
+
+  EXPECT_EQ(2, keyset_manager->KeyHandles().size());
+  EXPECT_EQ(key_handle, keyset_manager->PrimaryKey());
+}
+
+TEST_P(KeysetManagerTest, EmptyKeysetPromoteNextToPrimaryError) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+  EXPECT_EQ(FailedPreconditionError(
+                "Keyset is empty. Can't promote next key to primary."),
+            keyset_manager->PromoteNextToPrimary());
+}
+
+TEST_P(KeysetManagerTest, NewestKeyAlreadyPrimaryPromoteNextToPrimaryError) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  CRUNCHY_EXPECT_OK(keyset_manager->PromoteNextToPrimary());
+
+  EXPECT_EQ(FailedPreconditionError("Newest key is already the primary key. "
+                                    "Can't promote next key to primary."),
+            keyset_manager->PromoteNextToPrimary());
+}
+
+TEST_P(KeysetManagerTest, GarbageCollectKeysSuccess) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle = status_or_key_handle.ValueOrDie();
+  KeyMetadata* key_metadata = KeyUtil::GetKeyMetadata(key_handle);
+  key_metadata->set_status(KeyStatus::DELETED);
+  EXPECT_EQ(1, keyset_handle->key_handles().size());
+  CRUNCHY_EXPECT_OK(keyset_manager->GarbageCollectKeys());
+  EXPECT_EQ(0, keyset_handle->key_handles().size());
+}
+
+TEST_P(KeysetManagerTest, GarbageCollectKeysWithMultipleSuccess) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle_to_keep = status_or_key_handle.ValueOrDie();
+
+  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle_to_delete = status_or_key_handle.ValueOrDie();
+  KeyMetadata* key_metadata = KeyUtil::GetKeyMetadata(key_handle_to_delete);
+  key_metadata->set_status(KeyStatus::DELETED);
+
+  std::vector<std::shared_ptr<KeyHandle>> deleted_keys =
+      keyset_manager->GarbageCollectKeys().ValueOrDie();
+
+  std::vector<std::shared_ptr<KeyHandle>> expected_deleted_keys = {
+      key_handle_to_delete};
+  EXPECT_EQ(expected_deleted_keys, deleted_keys);
+
+  std::vector<std::shared_ptr<KeyHandle>> expected_keys_to_keep = {
+      key_handle_to_keep};
+  EXPECT_EQ(expected_keys_to_keep, keyset_handle->key_handles());
+}
+
+TEST_P(KeysetManagerTest, GarbageCollectKeysPrimaryKeyError) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle = status_or_key_handle.ValueOrDie();
+  CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));
+  KeyMetadata* key_metadata = KeyUtil::GetKeyMetadata(key_handle);
+  key_metadata->set_status(KeyStatus::DELETED);
+  EXPECT_EQ(FailedPreconditionError(
+                "Primary key has DELETED status. Refusing to delete."),
+            keyset_manager->GarbageCollectKeys());
+}
+
+TEST_P(KeysetManagerTest, GarbageCollectKeysEmptyKeyset) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+  std::vector<std::shared_ptr<KeyHandle>> deleted_keys =
+      keyset_manager->GarbageCollectKeys().ValueOrDie();
+  EXPECT_EQ(0, deleted_keys.size());
+}
+
+TEST_P(KeysetManagerTest, DeleteOldestKeySuccess) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle_to_delete = status_or_key_handle.ValueOrDie();
+
+  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle_to_keep = status_or_key_handle.ValueOrDie();
+
+  std::shared_ptr<KeyHandle> deleted_key =
+      keyset_manager->DeleteOldestKey().ValueOrDie();
+
+  EXPECT_EQ(deleted_key, key_handle_to_delete);
+
+  std::vector<std::shared_ptr<KeyHandle>> expected_keys_to_keep = {
+      key_handle_to_keep};
+  EXPECT_EQ(expected_keys_to_keep, keyset_handle->key_handles());
+}
+
+TEST_P(KeysetManagerTest, DeleteOldestKeyEmptyKeyset) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+  EXPECT_EQ(
+      FailedPreconditionError("Keyset is empty. Can't delete oldest key."),
+      keyset_manager->DeleteOldestKey().status());
+}
+
+TEST_P(KeysetManagerTest, DeleteOldestKeyOldestKeyIsPrimaryError) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle = status_or_key_handle.ValueOrDie();
+  CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));
+  EXPECT_EQ(FailedPreconditionError(
+                "Oldest key is primary key. Can't delete oldest key."),
+            keyset_manager->DeleteOldestKey().status());
+}
+
+INSTANTIATE_TEST_CASE_P(CrypterKeysetManagerTest, KeysetManagerTest,
+                        ::testing::Values("aes-128-gcm", "x25519-aes-256-gcm",
+                                          "hmac-sha256-halfdigest",
+                                          "p256-ecdsa"));
+
+}  // namespace
+
+}  // namespace crunchy

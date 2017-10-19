@@ -1,0 +1,57 @@
+// Copyright 2017 The CrunchyCrypt Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package crunchy;
+
+// The following KeyStatus is based on the KeyState definition in
+// //security/keymaster/remote/...
+//
+// A key's typical lifecycle is as follows:
+//   - CURRENT but not primary (key has been created but not yet put into
+//      service).
+//   - CURRENT and primary (key is the one currently used for
+//     signing/encryption operations).
+//   - RETIRED (key has been rotated out but remains trusted).
+//   - SCHEDULED_FOR_DELETION. - DELETED.
+enum KeyStatus {
+  UNKNOWN_STATE = 0;
+
+  // The key can be used normally. A keyset's primary key (if any) is always
+  // CURRENT. A keyset may optionally contain multiple CURRENT keys; the
+  // non-primary ones are keys that have been pregenerated but not yet rotated
+  // into active use.
+  CURRENT = 1;
+
+  // The key can be used to decrypt/verify but not to encrypt/sign. Old keys
+  // that are rotated out of active use should normally enter this state.
+  RETIRED = 2;
+
+  // The key can be used to verify/decrypt, but if it is used then an alert
+  // will fire. Use this state when you think nothing is using this key
+  // anymore, but you want to be sure before marking the key as DELETED.
+  SCHEDULED_FOR_DELETION = 3;
+
+  // The key cannot be used. The key still exists in the keyset, but is simply
+  // marked as deleted; thus, a key accidentally marked as DELETED can still
+  // be recovered by changing its state (e.g., to RETIRED). Keys in the
+  // DELETED state will eventually be garbage-collected, at which point they
+  // become permanently & irretrievably gone.
+  DELETED = 4;
+
+  // The key cannot be used, except that decryption keys can be used to
+  // decrypt. Keys in this state are not garbage-collected.
+  REVOKED = 5;
+}

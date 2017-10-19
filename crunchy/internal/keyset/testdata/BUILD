@@ -1,0 +1,34 @@
+# Copyright 2017 The CrunchyCrypt Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Test vectors for symmetric encryption
+
+package(default_visibility = ["//crunchy:internal_pkg"])
+
+licenses(["notice"])  # Apache 2.0
+
+load("//crunchy/internal/common:proto.bzl", "crunchy_proto_library")
+
+crunchy_proto_library(
+    name = "factory_test_vectors_proto",
+    testonly = 1,
+    srcs = ["factory_test_vectors.proto"],
+    deps = ["//crunchy/key_management/internal:keyset_proto"],
+)
+
+filegroup(
+    name = "testdata",
+    testonly = 1,
+    srcs = glob(["*.proto.bin"]),
+)
