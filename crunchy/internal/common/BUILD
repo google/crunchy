@@ -58,6 +58,7 @@ cc_library(
     name = "file",
     hdrs = ["file.h"],
     deps = [
+        "//crunchy/internal/port",
         "//crunchy/util:status",
         "@com_google_absl//absl/strings",
     ],
@@ -83,6 +84,7 @@ cc_library(
     srcs = ["status_matchers.cc"],
     hdrs = ["status_matchers.h"],
     deps = [
+        "//crunchy/internal/port",
         "//crunchy/util:status",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",

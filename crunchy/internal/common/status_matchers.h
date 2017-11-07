@@ -26,6 +26,7 @@
 
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include "crunchy/internal/port/port.h"
 #include "crunchy/util/status.h"
 
 namespace testing {

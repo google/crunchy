@@ -19,7 +19,7 @@
 #include <vector>
 
 #include <gtest/gtest.h>
-#include "crunchy/internal/algs/crypt/aes_gcm.h"
+#include "crunchy/internal/algs/crypt/openssl_aead.h"
 #include "crunchy/internal/algs/random/crypto_rand.h"
 #include "crunchy/internal/common/flags.h"
 #include "crunchy/internal/common/init.h"

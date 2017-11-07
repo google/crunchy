@@ -14,6 +14,7 @@
 
 #include "crunchy/internal/keyset/signer_factory.h"
 
+#include <stddef.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -34,7 +35,7 @@ class SignerImpl : public CrunchySigner {
   SignerImpl(std::unique_ptr<SigningKey> key, absl::string_view prefix)
       : key_(std::move(key)), prefix_(prefix) {}
 
-  virtual StatusOr<std::string> Sign(absl::string_view message) const {
+  StatusOr<std::string> Sign(absl::string_view message) const override {
     auto status_or_signature = key_->Sign(message);
     if (!status_or_signature.ok()) {
       return status_or_signature.status();
@@ -55,8 +56,8 @@ class VerifierImpl : public CrunchyVerifier {
     CRUNCHY_CHECK_EQ(keys_.size(), prefices_.size());
   }
 
-  virtual Status Verify(absl::string_view message,
-                        absl::string_view signature) const {
+  Status Verify(absl::string_view message,
+                absl::string_view signature) const override {
     bool key_found = false;
     Status error_status;
     for (size_t i = 0; i < keys_.size(); i++) {

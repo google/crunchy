@@ -48,6 +48,7 @@ cc_test(
         "//crunchy/internal/common:string_buffer",
         "//crunchy/internal/keyset:aead_crypting_key_registry",
         "//crunchy/internal/keyset/testdata:factory_test_vectors_proto_cc",
+        "//crunchy/internal/port",
         "//crunchy/key_management/internal:keyset_proto_cc",
         "//crunchy/util:status",
         "@com_google_absl//absl/strings",

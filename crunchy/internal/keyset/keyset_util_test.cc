@@ -18,7 +18,6 @@
 #include "crunchy/internal/common/status_matchers.h"
 #include "crunchy/key_management/internal/advanced_keyset_manager.h"
 #include "crunchy/key_management/internal/keyset.pb.h"
-#include "crunchy/key_management/keyset_enums.pb.h"
 #include "crunchy/key_management/keyset_manager.h"
 #include "crunchy/util/status.h"
 

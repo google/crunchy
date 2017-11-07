@@ -14,7 +14,6 @@
 
 #include "crunchy/internal/keyset/signing_key_registry.h"
 
-#include <type_traits>
 #include <utility>
 
 #include "absl/memory/memory.h"

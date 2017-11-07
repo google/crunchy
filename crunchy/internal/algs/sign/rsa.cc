@@ -24,6 +24,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "crunchy/internal/algs/hash/sha256.h"
+#include "crunchy/internal/algs/hash/sha384.h"
+#include "crunchy/internal/algs/hash/sha512.h"
 #include "crunchy/internal/algs/openssl/errors.h"
 #include "crunchy/internal/algs/openssl/openssl_unique_ptr.h"
 #include "crunchy/internal/common/pool.h"
@@ -42,9 +44,6 @@ namespace crunchy {
 
 namespace {
 
-const size_t kModulusBitLength = 2048;
-const int kSha256Nid = NID_sha256;
-
 class RsaPublicPool : public Pool<RSA> {
  public:
   using Pool<RSA>::Pool;
@@ -61,6 +60,21 @@ class RsaPrivatePool : public Pool<RSA> {
   RSA* Clone() override { return RSAPrivateKey_dup(GetSeedValue()); }
 };
 
+StatusOr<std::string> SerializePrivateKey(const RSA* rsa) {
+  uint8_t* serialized_private_key = nullptr;
+  size_t serialized_private_key_length;
+  if (RSA_private_key_to_bytes(&serialized_private_key,
+                               &serialized_private_key_length, rsa) != 1) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error serializing private key: "
+           << GetOpensslErrors();
+  }
+  std::string result(reinterpret_cast<char*>(serialized_private_key),
+                serialized_private_key_length);
+  OPENSSL_free(serialized_private_key);
+  return result;
+}
+
 StatusOr<openssl_unique_ptr<RSA>> DeserializePrivateKey(
     absl::string_view serialized_private_key) {
   openssl_unique_ptr<RSA> rsa(RSA_private_key_from_bytes(
@@ -72,6 +86,21 @@ StatusOr<openssl_unique_ptr<RSA>> DeserializePrivateKey(
            << GetOpensslErrors();
   }
   return std::move(rsa);
+}
+
+StatusOr<std::string> SerializePublicKey(const RSA* rsa) {
+  uint8_t* serialized_public_key = nullptr;
+  size_t serialized_public_key_length;
+  if (RSA_public_key_to_bytes(&serialized_public_key,
+                              &serialized_public_key_length, rsa) != 1) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error serializing public key: "
+           << GetOpensslErrors();
+  }
+  std::string result(reinterpret_cast<char*>(serialized_public_key),
+                serialized_public_key_length);
+  OPENSSL_free(serialized_public_key);
+  return result;
 }
 
 StatusOr<openssl_unique_ptr<RSA>> DeserializePublicKey(
@@ -87,162 +116,187 @@ StatusOr<openssl_unique_ptr<RSA>> DeserializePublicKey(
   return std::move(rsa);
 }
 
-class RsaPkcsSigner : public SignerInterface {
+StatusOr<std::string> HashInput(PaddingAlgorithm alg, const Hasher& hash,
+                           absl::string_view input, const BIGNUM* n) {
+  switch (alg) {
+    case PaddingAlgorithm::PKCS1:
+    case PaddingAlgorithm::PSS:
+      return hash.Hash(input);
+    default:
+      return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+             << "Invalid Padding Algorithm.";
+  }
+}
+
+class RsaSigner : public SignerInterface {
  public:
-  explicit RsaPkcsSigner(openssl_unique_ptr<RSA> rsa)
-      : pool_(absl::make_unique<RsaPrivatePool>(std::move(rsa))) {}
+  RsaSigner(PaddingAlgorithm alg, openssl_unique_ptr<RSA> rsa, bool hash_input,
+            const Hasher& hash)
+      : hash_input_(hash_input),
+        hash_(hash),
+        alg_(alg),
+        pool_(absl::make_unique<RsaPrivatePool>(std::move(rsa))) {}
 
   // Signs the given std::string and returns the signature.
   StatusOr<std::string> Sign(absl::string_view input) const override {
     pool_unique_ptr<RSA> rsa = pool_->get();
-    auto status_or = Sha256Hash(input);
-    if (!status_or.ok()) {
-      return status_or;
+
+    std::string digest(input);
+    if (hash_input_) {
+      StatusOr<std::string> status_or = HashInput(alg_, hash_, input, rsa->n);
+      if (!status_or.ok()) {
+        return status_or;
+      }
+      digest = status_or.ValueOrDie();
     }
-    std::string digest = status_or.ValueOrDie();
+
     StringBuffer signature(RSA_size(rsa.get()));
-    unsigned int signature_length;
-    if (RSA_sign(kSha256Nid,
-                 reinterpret_cast<const unsigned char*>(digest.data()),
-                 digest.length(), signature.data(), &signature_length,
-                 rsa.get()) == 0) {
-      return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
-             << "Call to RSA_sign failed: " << GetOpensslErrors();
+    switch (alg_) {
+      case PaddingAlgorithm::PKCS1: {
+        StatusOr<int> nid = hash_.OpensslNameId();
+        if (!nid.ok()) {
+          return nid.status();
+        }
+        unsigned int signature_length;
+        if (RSA_sign(nid.ValueOrDie(),
+                     reinterpret_cast<const unsigned char*>(digest.data()),
+                     digest.length(), signature.data(), &signature_length,
+                     rsa.get()) == 0) {
+          return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+                 << "Call to RSA_sign failed: " << GetOpensslErrors();
+        }
+        *signature.mutable_limit() = signature_length;
+        break;
+      }
+      case PaddingAlgorithm::PSS: {
+        StatusOr<const EVP_MD*> md = hash_.OpensslMessageDigest();
+        if (!md.ok()) {
+          return md.status();
+        }
+        if (RSA_sign_pss_mgf1(rsa.get(), signature.mutable_limit(),
+                              signature.data(), signature.length(),
+                              reinterpret_cast<const uint8_t*>(digest.data()),
+                              digest.size(), md.ValueOrDie(), md.ValueOrDie(),
+                              -1 /* salt_len */) != 1) {
+          return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+                 << "Call to RSA_sign_pss_mgf1 failed: " << GetOpensslErrors();
+        }
+        break;
+      }
     }
-    *signature.mutable_limit() = signature_length;
+
     return std::move(signature.as_string());
   }
 
  private:
+  bool hash_input_;
+  const Hasher& hash_;
+  PaddingAlgorithm alg_;
   std::unique_ptr<RsaPrivatePool> pool_;
 };
 
-class RsaPkcsVerifier : public VerifierInterface {
+class RsaVerifier : public VerifierInterface {
  public:
-  explicit RsaPkcsVerifier(openssl_unique_ptr<RSA> rsa)
-      : pool_(absl::make_unique<RsaPublicPool>(std::move(rsa))) {}
+  explicit RsaVerifier(PaddingAlgorithm alg, openssl_unique_ptr<RSA> rsa,
+                       bool hash_input, const Hasher& hash)
+      : hash_input_(hash_input),
+        hash_(hash),
+        alg_(alg),
+        pool_(absl::make_unique<RsaPublicPool>(std::move(rsa))) {}
 
   // Tries to verify the given signature of the input std::string and returns
   // Status::OK if the signature is valid.
   Status Verify(absl::string_view input,
                 absl::string_view signature) const override {
     pool_unique_ptr<RSA> rsa = pool_->get();
-    auto status_or = Sha256Hash(input);
-    if (!status_or.ok()) {
-      return status_or.status();
+
+    std::string digest = std::string(input);
+    if (hash_input_) {
+      StatusOr<std::string> status_or = HashInput(alg_, hash_, input, rsa.get()->n);
+      if (!status_or.ok()) {
+        return status_or.status();
+      }
+      digest = status_or.ValueOrDie();
     }
-    std::string digest = status_or.ValueOrDie();
-    if (RSA_verify(kSha256Nid,
-                   reinterpret_cast<const unsigned char*>(digest.data()),
-                   digest.length(),
-                   reinterpret_cast<const unsigned char*>(signature.data()),
-                   signature.size(), rsa.get()) == 0) {
-      return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
-             << "Call to RSA_verify failed: " << GetOpensslErrors();
+
+    switch (alg_) {
+      case PaddingAlgorithm::PKCS1: {
+        auto nid = hash_.OpensslNameId();
+        if (!nid.ok()) {
+          return nid.status();
+        }
+        if (RSA_verify(nid.ValueOrDie(),
+                       reinterpret_cast<const unsigned char*>(digest.data()),
+                       digest.length(),
+                       reinterpret_cast<const unsigned char*>(signature.data()),
+                       signature.size(), rsa.get()) == 0) {
+          return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+                 << "Call to RSA_verify failed: " << GetOpensslErrors();
+        }
+        break;
+      }
+      case PaddingAlgorithm::PSS: {
+        auto md = hash_.OpensslMessageDigest();
+        if (!md.ok()) {
+          return md.status();
+        }
+        if (RSA_verify_pss_mgf1(
+                rsa.get(), reinterpret_cast<const uint8_t*>(digest.data()),
+                digest.size(), md.ValueOrDie(), md.ValueOrDie(),
+                -1 /* salt_len */,
+                reinterpret_cast<const uint8_t*>(signature.data()),
+                signature.size()) != 1) {
+          return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+                 << "Call to RSA_verify_pss_mgf1 failed: "
+                 << GetOpensslErrors();
+        }
+        break;
+      }
     }
+
     return OkStatus();
   }
 
  private:
+  bool hash_input_;
+  const Hasher& hash_;
+  PaddingAlgorithm alg_;
   std::unique_ptr<RsaPublicPool> pool_;
 };
 
-class RsaPssSigner : public SignerInterface {
- public:
-  explicit RsaPssSigner(openssl_unique_ptr<RSA> rsa)
-      : pool_(absl::make_unique<RsaPrivatePool>(std::move(rsa))) {}
-
-  // Signs the given std::string and returns the signature.
-  StatusOr<std::string> Sign(absl::string_view input) const override {
-    pool_unique_ptr<RSA> rsa = pool_->get();
-    auto status_or = Sha256Hash(input);
-    if (!status_or.ok()) {
-      return status_or;
-    }
-    std::string digest = status_or.ValueOrDie();
-    StringBuffer signature(RSA_size(rsa.get()));
-    if (RSA_sign_pss_mgf1(rsa.get(), signature.mutable_limit(),
-                          signature.data(), signature.length(),
-                          reinterpret_cast<const uint8_t*>(digest.data()),
-                          digest.size(), EVP_sha256(), EVP_sha256(),
-                          -1 /* salt_len */) != 1) {
-      return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
-             << "Call to RSA_sign_pss_mgf1 failed: " << GetOpensslErrors();
-    }
-    return std::move(signature.as_string());
-  }
-
- private:
-  std::unique_ptr<RsaPrivatePool> pool_;
-};
-
-class RsaPssVerifier : public VerifierInterface {
- public:
-  explicit RsaPssVerifier(openssl_unique_ptr<RSA> rsa)
-      : pool_(absl::make_unique<RsaPublicPool>(std::move(rsa))) {}
-
-  // Tries to verify the given signature of the input std::string and returns
-  // Status::OK if the signature is valid.
-  Status Verify(absl::string_view input,
-                absl::string_view signature) const override {
-    pool_unique_ptr<RSA> rsa = pool_->get();
-    auto status_or = Sha256Hash(input);
-    if (!status_or.ok()) {
-      return status_or.status();
-    }
-    std::string digest = status_or.ValueOrDie();
-    if (RSA_verify_pss_mgf1(
-            rsa.get(), reinterpret_cast<const uint8_t*>(digest.data()),
-            digest.size(), EVP_sha256(), EVP_sha256(), -1 /* salt_len */,
-            reinterpret_cast<const uint8_t*>(signature.data()),
-            signature.size()) != 1) {
-      return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
-             << "Call to RSA_verify_pss_mgf1 failed: " << GetOpensslErrors();
-    }
-    return OkStatus();
-  }
-
- private:
-  std::unique_ptr<RsaPublicPool> pool_;
-};
-
-template <class S, class V>
 class RsaFactory : public SignerFactory {
  public:
-  RsaFactory(int e) : e_(e) {}
+  RsaFactory(ModulusBitLength modulus_length, PaddingAlgorithm alg, int e,
+             bool hash_input, const Hasher& hash)
+      : hash_input_(hash_input),
+        hash_(hash),
+        e_(e),
+        modulus_length_(static_cast<int>(modulus_length)),
+        alg_(alg) {}
 
   Status NewKeypair(std::string* public_key, std::string* private_key) const override {
     auto rsa = openssl_make_unique<RSA>();
     // Create the rsa key object.
     auto e = openssl_make_unique<BIGNUM>();
     BN_set_word(e.get(), e_);
-    RSA_generate_key_ex(rsa.get(), kModulusBitLength, e.get(), nullptr);
-
-    uint8_t* serialized_private_key = nullptr;
-    size_t serialized_private_key_length;
-    if (RSA_private_key_to_bytes(&serialized_private_key,
-                                 &serialized_private_key_length,
-                                 rsa.get()) != 1) {
+    if (RSA_generate_key_ex(rsa.get(), modulus_length_, e.get(), nullptr) !=
+        1) {
       return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
-             << "Openssl internal error serializing private key: "
+             << "Error generating private key: "
              << GetOpensslErrors();
     }
-    private_key->assign(reinterpret_cast<char*>(serialized_private_key),
-                        serialized_private_key_length);
-    OPENSSL_free(serialized_private_key);
 
-    uint8_t* serialized_public_key = nullptr;
-    size_t serialized_public_key_length;
-    if (RSA_public_key_to_bytes(&serialized_public_key,
-                                &serialized_public_key_length,
-                                rsa.get()) != 1) {
-      return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
-             << "Openssl internal error serializing public key: "
-             << GetOpensslErrors();
+    auto status_or_serialized_private_key = SerializePrivateKey(rsa.get());
+    if (!status_or_serialized_private_key.ok()) {
+      return status_or_serialized_private_key.status();
     }
-    public_key->assign(reinterpret_cast<char*>(serialized_public_key),
-                       serialized_public_key_length);
-    OPENSSL_free(serialized_public_key);
+    *private_key = std::move(status_or_serialized_private_key).ValueOrDie();
+
+    auto status_or_serialized_public_key = SerializePublicKey(rsa.get());
+    if (!status_or_serialized_public_key.ok()) {
+      return status_or_serialized_public_key.status();
+    }
+    *public_key = std::move(status_or_serialized_public_key).ValueOrDie();
 
     return OkStatus();
   }
@@ -253,7 +307,8 @@ class RsaFactory : public SignerFactory {
     if (!status_or_rsa.ok()) {
       return status_or_rsa.status();
     }
-    return {absl::make_unique<S>(std::move(status_or_rsa.ValueOrDie()))};
+    return {absl::make_unique<RsaSigner>(
+        alg_, std::move(status_or_rsa.ValueOrDie()), hash_input_, hash_)};
   }
 
   StatusOr<std::unique_ptr<VerifierInterface>> MakeVerifier(
@@ -263,25 +318,47 @@ class RsaFactory : public SignerFactory {
       return status_or_rsa.status();
     }
     openssl_unique_ptr<RSA> rsa = std::move(status_or_rsa.ValueOrDie());
-    return {absl::make_unique<V>(std::move(rsa))};
+    return {absl::make_unique<RsaVerifier>(alg_, std::move(rsa), hash_input_,
+                                           hash_)};
   }
 
  private:
+  bool hash_input_;
+  const Hasher& hash_;
   int e_;
+  size_t modulus_length_;
+  PaddingAlgorithm alg_;
 };
 
 }  // namespace
 
+std::unique_ptr<SignerFactory> MakeRsaFactory(ModulusBitLength modulus_length,
+                                              PaddingAlgorithm alg, int e,
+                                              const Hasher& hash) {
+  return absl::make_unique<RsaFactory>(modulus_length, alg, e,
+                                       /* hash_input= */ true, hash);
+}
+
+std::unique_ptr<SignerFactory> MakeRsaFactoryWithHashedInput(
+    ModulusBitLength modulus_length, PaddingAlgorithm alg, int e,
+    const Hasher& hash) {
+  return absl::make_unique<RsaFactory>(modulus_length, alg, e,
+                                       /* hash_input= */ false, hash);
+}
+
 const SignerFactory& GetRsa2048PkcsFactory() {
   static const SignerFactory& factory =
-      *new RsaFactory<RsaPkcsSigner, RsaPkcsVerifier>(RSA_F4 /* 2^16+1 */);
+      *MakeRsaFactory(ModulusBitLength::B2048, PaddingAlgorithm::PKCS1,
+                      RSA_F4 /* 2^16+1 */, Sha256::Instance())
+           .release();
   return factory;
 }
 
 const SignerFactory& GetRsa2048PssFactory() {
   static const SignerFactory& factory =
-      *new RsaFactory<RsaPssSigner, RsaPssVerifier>(RSA_F4 /* 2^16+1 */);
+      *MakeRsaFactory(ModulusBitLength::B2048, PaddingAlgorithm::PSS,
+                      RSA_F4 /* 2^16+1 */, Sha256::Instance())
+           .release();
   return factory;
 }
-
 }  // namespace crunchy

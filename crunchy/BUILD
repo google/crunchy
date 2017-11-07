@@ -23,6 +23,7 @@ exports_files(["LICENSE"])
 package_group(
     name = "internal_pkg",
     packages = [
+        "//cloud/security/kms/...",
         "//crunchy/...",
         "//crunchy/java/...",
         "//security/keymaster/...",

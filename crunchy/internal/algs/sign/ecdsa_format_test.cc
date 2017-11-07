@@ -54,7 +54,7 @@ const uint8_t random_encoded[] = {
 }  // namespace
 
 TEST(EcdsaUtilTest, RawToSEC1) {
-  auto result_or = p256_ecdsa_raw_signature_to_asn1(
+  auto result_or = ecdsa_raw_signature_to_asn1(
       absl::string_view(reinterpret_cast<const char*>(random_r),
                         sizeof(random_r)),
       absl::string_view(reinterpret_cast<const char*>(random_s),

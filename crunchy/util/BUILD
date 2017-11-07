@@ -24,6 +24,7 @@ cc_library(
     hdrs = ["status.h"],
     deps = [
         "//crunchy/internal/port",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",
     ],
 )

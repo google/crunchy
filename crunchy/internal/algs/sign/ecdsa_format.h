@@ -23,9 +23,9 @@
 namespace crunchy {
 
 // Construct a signature encoded as the ASN.1 structure (using DER) specified in
-// the SEC1 spec from two 32 byte MSB integers.
-StatusOr<std::string> p256_ecdsa_raw_signature_to_asn1(absl::string_view r,
-                                                  absl::string_view s);
+// the SEC1 spec from two MSB integers.
+StatusOr<std::string> ecdsa_raw_signature_to_asn1(absl::string_view r,
+                                             absl::string_view s);
 
 // Parse a signature encoded as the ASN.1 structure (using DER) specified in
 // the SEC1 spec into two 32 byte MSB integers. Result is assigned to r and s.

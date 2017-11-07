@@ -23,6 +23,8 @@
 #include "crunchy/util/status.h"
 #include <openssl/bn.h>
 #include <openssl/ec_key.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
 
 namespace crunchy {
 
@@ -99,6 +101,46 @@ StatusOr<openssl_unique_ptr<EC_POINT>> DeserializePoint(
            << "Point it not on the curve";
   }
   return std::move(point);
+}
+
+StatusOr<std::string> DeserializePointAsPemPublicKey(
+    int curve_nid, absl::string_view serialized_point) {
+  // serialized_point -> EC_POINT
+  openssl_unique_ptr<EC_GROUP> group(EC_GROUP_new_by_curve_name(curve_nid));
+  auto status_or_point = DeserializePoint(group.get(), serialized_point);
+  if (!status_or_point.ok()) {
+    return status_or_point.status();
+  }
+  openssl_unique_ptr<EC_POINT> point = std::move(status_or_point).ValueOrDie();
+
+  // EC_POINT -> EC_KEY
+  openssl_unique_ptr<EC_KEY> key(EC_KEY_new_by_curve_name(curve_nid));
+  if (key == nullptr) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error allocating key: " << GetOpensslErrors();
+  }
+  if (EC_KEY_set_public_key(key.get(), point.get()) != 1) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error setting public key: "
+           << GetOpensslErrors();
+  }
+
+  // EC_KEY -> EC_PKEY
+  auto pkey = openssl_make_unique<EVP_PKEY>();
+  if (EVP_PKEY_set1_EC_KEY(pkey.get(), key.get()) != 1) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error setting ec key: " << GetOpensslErrors();
+  }
+
+  // EC_KEY->PEM
+  auto bio = openssl_make_unique<BIO>(BIO_s_mem());
+  if (PEM_write_bio_PUBKEY(bio.get(), pkey.get()) != 1) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error writing bio: " << GetOpensslErrors();
+  }
+  char* pem = nullptr;
+  size_t pem_length = BIO_get_mem_data(bio.get(), &pem);
+  return std::string(pem, pem_length);
 }
 
 StatusOr<std::string> SerializePrivateKey(const EC_GROUP* group, const EC_KEY* key) {

@@ -70,7 +70,8 @@ Status CrypterBase::CheckEncryptInput(const uint8_t* nonce, size_t nonce_length,
   }
   if (this->nonce_length() != nonce_length) {
     return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
-           << "Nonce buffer has the wrong length.";
+           << "Nonce buffer has the wrong length, " << nonce_length
+           << " given, " << this->nonce_length() << " expected.";
   }
   if (aad_length > 0 && nullptr == aad) {
     return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()

@@ -15,36 +15,23 @@
 #include "crunchy/internal/algs/sign/ecdsa_format.h"
 
 #include <stddef.h>
+#include <stdint.h>
+#include <memory>
 #include <utility>
+
+#include "crunchy/internal/algs/openssl/errors.h"
+#include "crunchy/internal/algs/openssl/openssl_unique_ptr.h"
+#include "crunchy/internal/port/port.h"
+#include <openssl/base.h>
+#include <openssl/bn.h>
+#include <openssl/ecdsa.h>
+#include <openssl/mem.h>
 
 namespace crunchy {
 
 namespace {
 
 constexpr size_t kFiniteFieldByteSize = 32;
-
-std::string encode_der_integer(absl::string_view src) {
-  std::string buf;
-  buf.push_back(0x02);  // DER Integer tag
-
-  // Strip excess leading 0s
-  size_t start = src.find_first_not_of(0);
-  if (start == absl::string_view::npos) {
-    // Special case: Input is all zeroes
-    buf.push_back(1);  // Length
-    buf.push_back(0);  // Value
-    return buf;
-  }
-  if (src[start] & 0x80) {
-    // If high bit is set, add a leading zero since DER encoding is signed
-    buf.push_back(src.size() - start + 1);  // Length
-    buf.push_back(0);  // Leading zero
-  } else {
-    buf.push_back(src.size() - start);  // Length
-  }
-  buf.append(std::string(src), start, std::string::npos);  // Value
-  return buf;
-}
 
 StatusOr<std::string> decode_der_integer(absl::string_view n,
                                     size_t* bytes_consumed) {
@@ -74,25 +61,23 @@ StatusOr<std::string> decode_der_integer(absl::string_view n,
 
 }  // namespace
 
-StatusOr<std::string> p256_ecdsa_raw_signature_to_asn1(absl::string_view r,
-                                                  absl::string_view s) {
-  if (r.size() != kFiniteFieldByteSize) {
-    return InvalidArgumentError("r has invalid length");
-  }
-  if (s.size() != kFiniteFieldByteSize) {
-    return InvalidArgumentError("s has invalid length");
-  }
-  std::string r_der = encode_der_integer(r);
-  std::string s_der = encode_der_integer(s);
+StatusOr<std::string> ecdsa_raw_signature_to_asn1(absl::string_view r,
+                                             absl::string_view s) {
+  auto sig = openssl_make_unique<ECDSA_SIG>();
 
-  std::string sig;
-  sig.reserve(2 + r_der.length() + s_der.length());
-  sig.push_back(0x30);  // Sequence tag
-  sig.push_back(r_der.length() + s_der.length());
-  sig.append(r_der);
-  sig.append(s_der);
+  BN_bin2bn(reinterpret_cast<const uint8_t*>(r.data()), r.size(), sig->r);
+  BN_bin2bn(reinterpret_cast<const uint8_t*>(s.data()), s.size(), sig->s);
 
-  return sig;
+  uint8_t* sig_bytes = nullptr;
+  size_t sig_bytes_length = 0;
+  if (ECDSA_SIG_to_bytes(&sig_bytes, &sig_bytes_length, sig.get()) != 1) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl failed to generate signature: " << GetOpensslErrors();
+  }
+
+  std::string result(reinterpret_cast<char*>(sig_bytes), sig_bytes_length);
+  OPENSSL_free(sig_bytes);
+  return std::move(result);
 }
 
 Status p256_ecdsa_asn1_signature_to_raw(absl::string_view sig, std::string* r,

@@ -30,6 +30,7 @@
 #include "crunchy/internal/keyset/keyset_util.h"
 #include "crunchy/internal/keyset/testdata/factory_test_vectors.pb.h"
 #include "crunchy/key_management/crunchy_factory.h"
+#include "crunchy/key_management/internal/advanced_keyset_manager.h"
 #include "crunchy/key_management/key_handle.h"
 #include "crunchy/key_management/keyset_handle.h"
 #include "crunchy/key_management/keyset_manager.h"
@@ -144,13 +145,13 @@ TEST(KeysetFactoryTest, TwoKey) {
   // Make sure we can verify both signatures using a combined keyset.
   auto combined_keyset_handle = std::make_shared<KeysetHandle>();
   auto combined_keyset_manager =
-      ::absl::make_unique<KeysetManager>(combined_keyset_handle);
+      ::absl::make_unique<AdvancedKeysetManager>(combined_keyset_handle);
   for (const auto& key_handle : keyset_handle1->key_handles()) {
-    CRUNCHY_EXPECT_OK(combined_keyset_manager->AddNewKey(key_handle));
+    CRUNCHY_EXPECT_OK(combined_keyset_manager->AddKey(key_handle));
     CRUNCHY_EXPECT_OK(combined_keyset_manager->PromoteToPrimary(key_handle));
   }
   for (const auto& key_handle : keyset_handle2->key_handles()) {
-    CRUNCHY_EXPECT_OK(combined_keyset_manager->AddNewKey(key_handle));
+    CRUNCHY_EXPECT_OK(combined_keyset_manager->AddKey(key_handle));
     CRUNCHY_EXPECT_OK(combined_keyset_manager->PromoteToPrimary(key_handle));
   }
   auto status_or_combined_macer = MakeCrunchyMacer(combined_keyset_handle);
@@ -180,14 +181,14 @@ TEST(KeysetFactoryTest, Prefix) {
   // Create keyset with the same key but remove the prefix
   auto nonprefix_keyset_handle = std::make_shared<KeysetHandle>();
   auto nonprefix_keyset_manager =
-      ::absl::make_unique<KeysetManager>(nonprefix_keyset_handle);
+      ::absl::make_unique<AdvancedKeysetManager>(nonprefix_keyset_handle);
   for (const auto& key_handle : prefix_keyset_handle->key_handles()) {
     auto status_or_cloned_key_handle = KeyUtil::MakeCopy(key_handle);
     CRUNCHY_EXPECT_OK(status_or_cloned_key_handle);
     auto cloned_key_handle = status_or_cloned_key_handle.ValueOrDie();
     KeyMetadata* key_metadata = KeyUtil::GetKeyMetadata(cloned_key_handle);
     key_metadata->clear_prefix();
-    CRUNCHY_EXPECT_OK(nonprefix_keyset_manager->AddNewKey(cloned_key_handle));
+    CRUNCHY_EXPECT_OK(nonprefix_keyset_manager->AddKey(cloned_key_handle));
     CRUNCHY_EXPECT_OK(
         nonprefix_keyset_manager->PromoteToPrimary(cloned_key_handle));
   }

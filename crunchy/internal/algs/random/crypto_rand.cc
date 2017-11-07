@@ -13,10 +13,12 @@
 // limitations under the License.
 
 #include "crunchy/internal/algs/random/crypto_rand.h"
+
 #include <openssl/rand.h>
 #include <string.h>
 
 namespace crunchy {
+
 void RandBytes(void* out, size_t len) {
   RAND_bytes(reinterpret_cast<uint8_t*>(out), len);
 }

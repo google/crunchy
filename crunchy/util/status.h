@@ -18,6 +18,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "crunchy/internal/port/port.h"
@@ -156,7 +157,8 @@ enum Code {
   // may change in the future.
   DO_NOT_USE_RESERVED_FOR_FUTURE_EXPANSION_USE_DEFAULT_IN_SWITCH_INSTEAD_ = 20,
 };
-class Status {
+
+class ABSL_MUST_USE_RESULT Status {
  public:
   Status() : code_(Code::OK) {}
   Status(Code code, absl::string_view msg) : code_(code), msg_(std::string(msg)) {}
@@ -185,7 +187,7 @@ inline std::ostream& operator<<(std::ostream& os, const Status& x) {
   return os;
 }
 
-class StatusBuilder {
+class ABSL_MUST_USE_RESULT StatusBuilder {
  public:
   StatusBuilder(Code code, source_location location)
       : status_(code, ""),
@@ -224,7 +226,7 @@ class StatusBuilder {
     return *this;
   }
 
-  operator Status() const & {
+  operator Status() const& {
     Status status(status_.error_code(), stream_);
     if (log_type_ == LogType::kDisabled) return status;
     ::crunchy::internal::LogMessage log_message(file_, line_, log_severity_);
@@ -252,33 +254,55 @@ class StatusBuilder {
 };
 
 template <typename T>
-class StatusOr {
+class ABSL_MUST_USE_RESULT StatusOr {
  public:
-  StatusOr(const Status& status) : status_(status), is_error_(true) {}
-  StatusOr(const StatusBuilder& status_builder)
-      : status_(status_builder), is_error_(true) {}
-  StatusOr(const T& value) : value_(value), is_error_(false) {}
-  StatusOr(T&& value) : value_(std::move(value)), is_error_(false) {}
+  StatusOr(const Status& status) : status_(status) { EnsureNotOk(); }
+  StatusOr(const StatusBuilder& status_builder) : status_(status_builder) {
+    EnsureNotOk();
+  }
+  StatusOr(const T& value) : value_(value) {}
+  StatusOr(T&& value) : value_(std::move(value)) {}
 
   const Status& status() const { return status_; }
   bool ok() const { return status_.ok(); }
 
-  operator Status() const & { return status_; }
+  operator Status() const& { return status_; }
 
-  T& ValueOrDie() & {
-    CRUNCHY_CHECK(!is_error_);
+  const T& ValueOrDie() const& {
+    EnsureOk();
     return value_;
   }
 
+  T& ValueOrDie() & {
+    EnsureOk();
+    return value_;
+  }
+
+  const T&& ValueOrDie() const&& {
+    EnsureOk();
+    return std::move(value_);
+  }
+
   T&& ValueOrDie() && {
-    CRUNCHY_CHECK(!is_error_);
+    EnsureOk();
     return std::move(value_);
   }
 
  private:
+  void EnsureNotOk() {
+    if (ok()) {
+      CRUNCHY_DLOG(FATAL) << "StatusOr constructed with an ok status";
+      status_ = Status(INTERNAL, "StatusOr constructed with an ok status");
+    }
+  }
+  void EnsureOk() const {
+    if (!ok()) {
+      CRUNCHY_LOG(FATAL) << "ValueOrDie() called with error status: "
+                         << status_.ToString();
+    }
+  }
   Status status_;
   T value_;
-  bool is_error_;
 };
 
 inline StatusBuilder AbortedErrorBuilder(source_location location) {

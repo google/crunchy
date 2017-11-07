@@ -30,6 +30,7 @@
 #include "crunchy/internal/keyset/keyset_util.h"
 #include "crunchy/internal/keyset/testdata/factory_test_vectors.pb.h"
 #include "crunchy/key_management/crunchy_factory.h"
+#include "crunchy/key_management/internal/advanced_keyset_manager.h"
 #include "crunchy/key_management/key_handle.h"
 #include "crunchy/key_management/keyset_manager.h"
 
@@ -184,10 +185,10 @@ TEST(KeysetFactoryTest, TwoKey) {
   std::shared_ptr<KeyHandle> key_handle2 = keyset_handle2->key_handles().at(0);
   auto combined_keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager =
-      ::absl::make_unique<KeysetManager>(combined_keyset_handle);
-  keyset_manager->AddNewKey(key_handle1);
-  keyset_manager->AddNewKey(key_handle2);
-  keyset_manager->PromoteToPrimary(key_handle2);
+      ::absl::make_unique<AdvancedKeysetManager>(combined_keyset_handle);
+  CRUNCHY_ASSERT_OK(keyset_manager->AddKey(key_handle1));
+  CRUNCHY_ASSERT_OK(keyset_manager->AddKey(key_handle2));
+  CRUNCHY_ASSERT_OK(keyset_manager->PromoteToPrimary(key_handle2));
   status_or_crypter = MakeCrunchyCrypter(combined_keyset_handle);
   CRUNCHY_ASSERT_OK(status_or_crypter.status());
   std::unique_ptr<CrunchyCrypter> combined_crypter =
@@ -221,9 +222,9 @@ TEST(KeysetFactoryTest, Prefix) {
   size_t prefix_length = 42;
   auto prefix_keyset_handle = std::make_shared<KeysetHandle>();
   auto prefix_keyset_manager =
-      ::absl::make_unique<KeysetManager>(prefix_keyset_handle);
-  auto status_or_key_handle = prefix_keyset_manager->GenerateAndAddNewKey(
-      kKeyUri, RandString(prefix_length));
+      ::absl::make_unique<AdvancedKeysetManager>(prefix_keyset_handle);
+  auto status_or_key_handle =
+      prefix_keyset_manager->CreateNewKey(kKeyUri, RandString(prefix_length));
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto prefix_key_handle = status_or_key_handle.ValueOrDie();
   CRUNCHY_EXPECT_OK(prefix_keyset_manager->PromoteToPrimary(prefix_key_handle));
@@ -236,9 +237,10 @@ TEST(KeysetFactoryTest, Prefix) {
   KeyMetadata* key_metadata = KeyUtil::GetKeyMetadata(noprefix_key_handle);
   key_metadata->clear_prefix();
   auto nonprefix_keyset_manager =
-      ::absl::make_unique<KeysetManager>(nonprefix_keyset_handle);
-  nonprefix_keyset_manager->AddNewKey(noprefix_key_handle);
-  nonprefix_keyset_manager->PromoteToPrimary(noprefix_key_handle);
+      ::absl::make_unique<AdvancedKeysetManager>(nonprefix_keyset_handle);
+  CRUNCHY_ASSERT_OK(nonprefix_keyset_manager->AddKey(noprefix_key_handle));
+  CRUNCHY_ASSERT_OK(
+      nonprefix_keyset_manager->PromoteToPrimary(noprefix_key_handle));
 
   auto status_or_crypter = MakeCrunchyCrypter(prefix_keyset_handle);
   CRUNCHY_ASSERT_OK(status_or_crypter.status());

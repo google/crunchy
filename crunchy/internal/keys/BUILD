@@ -28,6 +28,7 @@ cc_library(
         "//crunchy/internal/algs/crypt:crypter_interface",
         "//crunchy/internal/algs/random:crypto_rand",
         "//crunchy/internal/common:string_buffer",
+        "//crunchy/internal/port",
         "//crunchy/key_management/internal:keyset_proto_cc",
         "//crunchy/util:status",
         "@com_google_absl//absl/memory",
@@ -42,7 +43,7 @@ cc_test(
     deps = [
         ":aead_crypting_key",
         ":aead_crypting_key_test_vectors_proto_cc",
-        "//crunchy/internal/algs/crypt:aes_gcm",
+        "//crunchy/internal/algs/crypt:openssl_aead",
         "//crunchy/internal/algs/random:crypto_rand",
         "//crunchy/internal/common:flags",
         "//crunchy/internal/common:init",
@@ -84,6 +85,7 @@ cc_library(
     hdrs = ["signing_key.h"],
     deps = [
         "//crunchy/internal/algs/sign:signer_interface",
+        "//crunchy/internal/port",
         "//crunchy/key_management/internal:keyset_proto_cc",
         "//crunchy/util:status",
         "@com_google_absl//absl/memory",
@@ -105,6 +107,7 @@ cc_library(
     deps = [
         "//crunchy/internal/algs/mac:mac_interface",
         "//crunchy/internal/algs/random:crypto_rand",
+        "//crunchy/internal/port",
         "//crunchy/key_management/internal:keyset_proto_cc",
         "//crunchy/util:status",
         "@com_google_absl//absl/memory",
@@ -142,6 +145,7 @@ cc_library(
     hdrs = ["hybrid_crypting_key.h"],
     deps = [
         "//crunchy/internal/algs/hybrid",
+        "//crunchy/internal/port",
         "//crunchy/key_management/internal:keyset_proto_cc",
         "//crunchy/util:status",
         "@com_google_absl//absl/memory",

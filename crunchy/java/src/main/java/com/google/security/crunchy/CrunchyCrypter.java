@@ -25,7 +25,7 @@ public interface CrunchyCrypter {
    * Encrypts a payload.
    *
    * @param plaintext The plaintext to be encrypted.
-   * @return The encrypted plaintext.
+   * @return The ciphertext.
    * @throws GeneralSecurityException If the underlying crypto library returns an error.
    */
   public byte[] encrypt(byte[] plaintext) throws GeneralSecurityException;
@@ -36,7 +36,7 @@ public interface CrunchyCrypter {
    * @param plaintext The plaintext to be encrypted.
    * @param aad Additional authenticated data that is authenticated with the plaintext, if
    *     supported.
-   * @return The encrypted plaintext.
+   * @return The ciphertext that was encrypted.
    * @throws GeneralSecurityException If the underlying crypto library returns an error or aad is
    *     used but not supported.
    */
@@ -46,10 +46,10 @@ public interface CrunchyCrypter {
    * Decrypts a payload.
    *
    * @param ciphertext The ciphertext to be decrypted.
-   * @return The encrypted plaintext.
+   * @return The plaintext that was decrypted.
    * @throws GeneralSecurityException If the ciphertext failed an authentication check, if the key
-   * identifier in the ciphertext cannot be found, or if the underlying crypto library returns an
-   * error.
+   *     identifier in the ciphertext cannot be found, or if the underlying crypto library returns
+   *     an error.
    */
   public byte[] decrypt(byte[] ciphertext) throws GeneralSecurityException;
 
@@ -59,7 +59,7 @@ public interface CrunchyCrypter {
    * @param ciphertext The ciphertext to be decrypted.
    * @param aad Additional authenticated data that is authenticated with the plaintext, if
    *     supported.
-   * @return The encrypted plaintext.
+   * @return The plaintext that was decrypted.
    * @throws GeneralSecurityException If the ciphertext failed an authentication check, if the key
    *     identifier in the ciphertext cannot be found, if aad is used but not supported, or if the
    *     underlying crypto library returns an error.

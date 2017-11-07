@@ -23,8 +23,9 @@ cc_library(
     srcs = ["aead_crypting_key_registry.cc"],
     hdrs = ["aead_crypting_key_registry.h"],
     deps = [
+        ":key_registry",
         "//crunchy/internal/algs/crypt:aes_eax",
-        "//crunchy/internal/algs/crypt:aes_gcm",
+        "//crunchy/internal/algs/crypt:openssl_aead",
         "//crunchy/internal/keys:aead_crypting_key",
         "//crunchy/internal/port",
         "//crunchy/key_management/internal:keyset_proto_cc",
@@ -39,7 +40,7 @@ cc_test(
     srcs = ["aead_crypting_key_registry_test.cc"],
     deps = [
         ":aead_crypting_key_registry",
-        "//crunchy/internal/algs/crypt:aes_gcm",
+        "//crunchy/internal/algs/crypt:openssl_aead",
         "//crunchy/internal/common:status_matchers",
         "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest_main",
@@ -81,6 +82,7 @@ cc_test(
         "//crunchy/key_management:crunchy_factory",
         "//crunchy/key_management:key_handle",
         "//crunchy/key_management:keyset_manager",
+        "//crunchy/key_management/internal:advanced_keyset_manager",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
@@ -91,6 +93,7 @@ cc_library(
     srcs = ["signing_key_registry.cc"],
     hdrs = ["signing_key_registry.h"],
     deps = [
+        ":key_registry",
         "//crunchy/internal/algs/sign:ed25519",
         "//crunchy/internal/algs/sign:p256_ecdsa",
         "//crunchy/internal/algs/sign:rsa",
@@ -162,6 +165,7 @@ cc_library(
     srcs = ["macing_key_registry.cc"],
     hdrs = ["macing_key_registry.h"],
     deps = [
+        ":key_registry",
         "//crunchy/internal/algs/mac:openssl_hmac",
         "//crunchy/internal/keys:macing_key",
         "//crunchy/internal/port",
@@ -221,6 +225,7 @@ cc_test(
         "//crunchy/key_management:key_handle",
         "//crunchy/key_management:keyset_handle",
         "//crunchy/key_management:keyset_manager",
+        "//crunchy/key_management/internal:advanced_keyset_manager",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
@@ -231,6 +236,7 @@ cc_library(
     srcs = ["hybrid_crypting_key_registry.cc"],
     hdrs = ["hybrid_crypting_key_registry.h"],
     deps = [
+        ":key_registry",
         "//crunchy/internal/algs/hybrid",
         "//crunchy/internal/keys:hybrid_crypting_key",
         "//crunchy/internal/port",
@@ -288,6 +294,7 @@ cc_test(
         "//crunchy/key_management:crunchy_factory",
         "//crunchy/key_management:keyset_handle",
         "//crunchy/key_management:keyset_manager",
+        "//crunchy/key_management/internal:advanced_keyset_manager",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
@@ -317,5 +324,15 @@ cc_test(
         "//crunchy/key_management/internal:keyset_proto_cc",
         "//crunchy/util:status",
         "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "key_registry",
+    hdrs = ["key_registry.h"],
+    deps = [
+        "//crunchy/key_management/internal:keyset_proto_cc",
+        "//crunchy/util:status",
+        "@com_google_absl//absl/strings",
     ],
 )

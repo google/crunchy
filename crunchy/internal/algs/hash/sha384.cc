@@ -21,7 +21,12 @@
 
 namespace crunchy {
 
-StatusOr<std::string> Sha384Hash(absl::string_view input) {
+const Sha384& Sha384::Instance() {
+  static const Sha384& instance = *new Sha384();
+  return instance;
+}
+
+StatusOr<std::string> Sha384::Hash(absl::string_view input) const {
   uint8_t digest[EVP_MAX_MD_SIZE];
   unsigned int digest_length = 0;
   if (EVP_Digest(input.data(), input.size(), digest, &digest_length,
@@ -30,6 +35,15 @@ StatusOr<std::string> Sha384Hash(absl::string_view input) {
            << "Openssl internal error computing sha384: " << GetOpensslErrors();
   }
   return std::string(reinterpret_cast<const char*>(digest), digest_length);
+}
+
+StatusOr<std::string> Sha384Hash(absl::string_view input) {
+  return Sha384::Instance().Hash(input);
+}
+
+StatusOr<int> Sha384::OpensslNameId() const { return NID_sha384; }
+StatusOr<const EVP_MD*> Sha384::OpensslMessageDigest() const {
+  return EVP_sha384();
 }
 
 }  // namespace crunchy

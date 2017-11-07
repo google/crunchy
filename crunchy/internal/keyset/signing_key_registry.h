@@ -21,14 +21,16 @@
 
 #include "absl/strings/string_view.h"
 #include "crunchy/internal/keys/signing_key.h"
+#include "crunchy/internal/keyset/key_registry.h"
 #include "crunchy/key_management/internal/keyset.pb.h"
 #include "crunchy/util/status.h"
 
 namespace crunchy {
 
-class SigningKeyRegistry {
+class SigningKeyRegistry : public KeyRegistry {
  public:
   SigningKeyRegistry() = default;
+  virtual ~SigningKeyRegistry() = default;
 
   SigningKeyRegistry(const SigningKeyRegistry&) = delete;
   SigningKeyRegistry operator=(const SigningKeyRegistry&) = delete;
@@ -46,6 +48,15 @@ class SigningKeyRegistry {
 
   Status Register(absl::string_view key_label,
                   std::unique_ptr<SigningKeyFactory> key_factory);
+
+  bool contains(const absl::string_view key_label) const override {
+    return factory_map_.find(std::string(key_label)) != factory_map_.end();
+  }
+
+  StatusOr<KeyData> CreateKeyData(
+      const absl::string_view key_label) const override {
+    return CreateRandomPrivateKeyData(key_label);
+  }
 
  private:
   std::map<std::string, std::unique_ptr<SigningKeyFactory>> factory_map_;

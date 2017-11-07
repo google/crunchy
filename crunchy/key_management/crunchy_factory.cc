@@ -15,6 +15,7 @@
 #include "crunchy/key_management/crunchy_factory.h"
 
 #include "crunchy/crunchy_hybrid_crypter.h"
+#include "crunchy/internal/keyset/aead_crypting_key_registry.h"
 #include "crunchy/internal/keyset/crypter_factory.h"
 #include "crunchy/internal/keyset/hybrid_crypter_factory.h"
 #include "crunchy/internal/keyset/hybrid_crypting_key_registry.h"
@@ -23,6 +24,8 @@
 #include "crunchy/internal/keyset/macing_key_registry.h"
 #include "crunchy/internal/keyset/signer_factory.h"
 #include "crunchy/internal/keyset/signing_key_registry.h"
+#include "crunchy/key_management/internal/keyset.pb.h"
+#include "crunchy/util/status.h"
 
 namespace crunchy {
 

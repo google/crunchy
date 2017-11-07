@@ -18,17 +18,14 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-#include "crunchy/internal/algs/crypt/aes_gcm.h"
 #include "crunchy/internal/algs/crypt/crypter_interface.h"
+#include "crunchy/internal/algs/crypt/openssl_aead.h"
 #include "crunchy/internal/algs/random/crypto_rand.h"
 #include "crunchy/util/status.h"
 
 namespace crunchy {
 
 namespace {
-
-const size_t kNonceLength = 12;
-const size_t kTagLength = 16;
 
 class DemImpl : public Dem {
  public:

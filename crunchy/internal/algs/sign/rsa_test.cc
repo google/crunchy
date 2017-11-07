@@ -20,6 +20,7 @@
 
 #include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
+#include "crunchy/internal/algs/hash/sha256.h"
 #include "crunchy/internal/algs/sign/signer_interface.h"
 #include "crunchy/internal/algs/sign/signer_test.h"
 #include "crunchy/internal/algs/sign/testdata/sign_test_vectors.pb.h"
@@ -28,12 +29,21 @@
 #include "crunchy/internal/common/status_matchers.h"
 #include "crunchy/internal/common/test_factory.h"
 #include "crunchy/util/status.h"
+#include <openssl/rsa.h>
 
 namespace crunchy {
 
 namespace {
 
 std::vector<FactoryInfo<SignerFactory>>* FactoryInfoVector() {
+  static const SignerFactory& rsa4096PkcsFactory =
+      *MakeRsaFactory(ModulusBitLength::B4096, PaddingAlgorithm::PKCS1,
+                      RSA_F4 /* 2^16+1 */, Sha256::Instance())
+           .release();
+  static const SignerFactory& rsa4096PssFactory =
+      *MakeRsaFactory(ModulusBitLength::B4096, PaddingAlgorithm::PSS,
+                      RSA_F4 /* 2^16+1 */, Sha256::Instance())
+           .release();
   auto factories = new std::vector<FactoryInfo<SignerFactory>>();
   factories->push_back(
       {"Rsa2048Pkcs", GetRsa2048PkcsFactory(),
@@ -41,6 +51,12 @@ std::vector<FactoryInfo<SignerFactory>>* FactoryInfoVector() {
   factories->push_back(
       {"Rsa2048Pss", GetRsa2048PssFactory(),
        "crunchy/internal/algs/sign/testdata/rsa2048_pss.proto.bin"});
+  factories->push_back(
+      {"Rsa4096Pkcs", rsa4096PkcsFactory,
+       "crunchy/internal/algs/sign/testdata/rsa4096_pkcs.proto.bin"});
+  factories->push_back(
+      {"Rsa4096Pss", rsa4096PssFactory,
+       "crunchy/internal/algs/sign/testdata/rsa4096_pss.proto.bin"});
   return factories;
 }
 

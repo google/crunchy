@@ -36,6 +36,11 @@ StatusOr<std::string> SerializePoint(const EC_GROUP* group, const EC_POINT* poin
 StatusOr<openssl_unique_ptr<EC_POINT>> DeserializePoint(
     const EC_GROUP* group, absl::string_view serialized_point);
 
+// Attempts to deserialize a point from the format given by
+// SerializePoint to an EC public key.
+StatusOr<std::string> DeserializePointAsPemPublicKey(
+    int curve_nid, absl::string_view serialized_point);
+
 // Returns a private key as the exponent, big-endian serialized in the fewest
 // number of bytes required to store EC_GROUP_get_degree(group) bits.
 StatusOr<std::string> SerializePrivateKey(const EC_GROUP* group, const EC_KEY* key);

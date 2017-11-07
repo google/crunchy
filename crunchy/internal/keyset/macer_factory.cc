@@ -14,6 +14,7 @@
 
 #include "crunchy/internal/keyset/macer_factory.h"
 
+#include <stddef.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -42,7 +43,7 @@ class MacerImpl : public CrunchyMacer {
     CRUNCHY_CHECK_EQ(keys_.size(), prefices_.size());
   }
 
-  virtual StatusOr<std::string> Sign(absl::string_view message) const {
+  StatusOr<std::string> Sign(absl::string_view message) const override {
     auto status_or_signature = primary_key_->Sign(message);
     if (!status_or_signature.ok()) {
       return status_or_signature.status();
@@ -50,8 +51,8 @@ class MacerImpl : public CrunchyMacer {
     return absl::StrCat(primary_prefix_, status_or_signature.ValueOrDie());
   }
 
-  virtual Status Verify(absl::string_view message,
-                        absl::string_view signature) const {
+  Status Verify(absl::string_view message,
+                absl::string_view signature) const override {
     bool key_found = false;
     Status error_status;
     for (size_t i = 0; i < keys_.size(); i++) {

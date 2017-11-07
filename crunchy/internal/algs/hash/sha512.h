@@ -18,9 +18,22 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "crunchy/internal/algs/hash/hash_interface.h"
 #include "crunchy/util/status.h"
 
 namespace crunchy {
+
+class Sha512 : public Hasher {
+ public:
+  static const Sha512& Instance();
+
+  StatusOr<std::string> Hash(absl::string_view input) const override;
+  StatusOr<int> OpensslNameId() const override;
+  StatusOr<const EVP_MD*> OpensslMessageDigest() const override;
+
+ private:
+  Sha512(){}
+};
 
 StatusOr<std::string> Sha512Hash(absl::string_view input);
 

@@ -18,6 +18,11 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include "crunchy/internal/algs/hash/identity.h"
+#include "crunchy/internal/algs/hash/sha256.h"
+#include "crunchy/internal/algs/hash/sha384.h"
+#include "crunchy/internal/algs/hash/sha512.h"
+#include "crunchy/internal/algs/sign/ecdsa.h"
 #include "crunchy/internal/algs/sign/ed25519.h"
 #include "crunchy/internal/algs/sign/p256_ecdsa.h"
 #include "crunchy/internal/algs/sign/signer_interface.h"
@@ -36,13 +41,62 @@ namespace {
 const size_t kTestVectorMaxMessageSize = 42;
 
 std::vector<FactoryInfo<SignerFactory>>* FactoryInfoVector() {
+  static const SignerFactory& p384EcdsaAsn1Factory =
+      *MakeEcdsaFactory(Curve::P384, Sha384::Instance(), SignatureFormat::ASN1)
+           .release();
+  static const SignerFactory& p521EcdsaAsn1Factory =
+      *MakeEcdsaFactory(Curve::P521, Sha512::Instance(), SignatureFormat::ASN1)
+           .release();
+  static const SignerFactory& p384EcdsaJwtFactory =
+      *MakeEcdsaFactory(Curve::P384, Sha384::Instance(), SignatureFormat::JWT)
+           .release();
+  static const SignerFactory& p521EcdsaJwtFactory =
+      *MakeEcdsaFactory(Curve::P521, Sha512::Instance(), SignatureFormat::JWT)
+           .release();
+  static const SignerFactory& p256PredigestedEcdsaAsn1Factory =
+      *MakeEcdsaFactory(Curve::P256, IdentityHash::Instance(),
+                        SignatureFormat::ASN1)
+           .release();
+  static const SignerFactory& p384PredigestedEcdsaAsn1Factory =
+      *MakeEcdsaFactory(Curve::P384, IdentityHash::Instance(),
+                        SignatureFormat::ASN1)
+           .release();
+  static const SignerFactory& p521PredigestedEcdsaAsn1Factory =
+      *MakeEcdsaFactory(Curve::P521, IdentityHash::Instance(),
+                        SignatureFormat::ASN1)
+           .release();
+
   auto factories = new std::vector<FactoryInfo<SignerFactory>>();
   factories->push_back(
       {"P256EcdsaAsn1", GetP256EcdsaAsn1Factory(),
        "crunchy/internal/algs/sign/testdata/p256_ecdsa_asn1.proto.bin"});
   factories->push_back(
+      {"P384EcdsaAsn1", p384EcdsaAsn1Factory,
+       "crunchy/internal/algs/sign/testdata/p384_ecdsa_asn1.proto.bin"});
+  factories->push_back(
+      {"P521EcdsaAsn1", p521EcdsaAsn1Factory,
+       "crunchy/internal/algs/sign/testdata/p521_ecdsa_asn1.proto.bin"});
+  factories->push_back(
       {"P256EcdsaJwt", GetP256EcdsaJwtFactory(),
        "crunchy/internal/algs/sign/testdata/p256_ecdsa_jwt.proto.bin"});
+  factories->push_back(
+      {"P384EcdsaJwt", p384EcdsaJwtFactory,
+       "crunchy/internal/algs/sign/testdata/p384_ecdsa_jwt.proto.bin"});
+  factories->push_back(
+      {"P521EcdsaJwt", p521EcdsaJwtFactory,
+       "crunchy/internal/algs/sign/testdata/p521_ecdsa_jwt.proto.bin"});
+  factories->push_back({"P256PredigestedEcdsaAsn1",
+                        p256PredigestedEcdsaAsn1Factory,
+                        "crunchy/internal/algs/sign/testdata/"
+                        "p256_predigested_ecdsa_asn1.proto.bin"});
+  factories->push_back({"P384PredigestedEcdsaAsn1",
+                        p384PredigestedEcdsaAsn1Factory,
+                        "crunchy/internal/algs/sign/testdata/"
+                        "p384_predigested_ecdsa_asn1.proto.bin"});
+  factories->push_back({"P521PredigestedEcdsaAsn1",
+                        p521PredigestedEcdsaAsn1Factory,
+                        "crunchy/internal/algs/sign/testdata/"
+                        "p521_predigested_ecdsa_asn1.proto.bin"});
   factories->push_back(
       {"Ed25519", GetEd25519Factory(),
        "crunchy/internal/algs/sign/testdata/ed25519.proto.bin"});

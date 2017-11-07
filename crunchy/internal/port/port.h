@@ -24,6 +24,20 @@
 
 namespace crunchy {
 
+inline uint16_t BigEndianLoad16(const void* p) {
+  uint8_t tmp[sizeof(uint16_t)];
+  memcpy(tmp, p, sizeof(tmp));
+  uint16_t result =
+      static_cast<uint16_t>(tmp[0]) << 8 | static_cast<uint16_t>(tmp[1]);
+  return result;
+}
+inline void BigEndianStore16(void* p, uint16_t v) {
+  uint8_t tmp[sizeof(uint16_t)];
+  tmp[0] = static_cast<uint8_t>((v >> 8) & 0xFF);
+  tmp[1] = static_cast<uint8_t>(v & 0xFF);
+  memcpy(p, tmp, sizeof(tmp));
+}
+
 inline uint64_t BigEndianLoad64(const void* p) {
   uint8_t tmp[sizeof(uint64_t)];
   memcpy(tmp, p, sizeof(tmp));

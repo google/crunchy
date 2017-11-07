@@ -38,7 +38,7 @@ class KeysetUtil {
     return keyset;
   }
 
-  static std::shared_ptr<KeysetHandle> KeysetHandleFromProto(
+  static StatusOr<std::shared_ptr<KeysetHandle>> KeysetHandleFromProto(
       const Keyset& keyset) {
     auto keyset_handle = std::make_shared<KeysetHandle>();
     for (int i = 0; i < keyset.key().size(); i++) {
@@ -46,7 +46,10 @@ class KeysetUtil {
       const auto& key_handle = KeyUtil::KeyHandleFromProto(key);
       keyset_handle->key_handles_.push_back(key_handle);
       if (i == keyset.primary_key_id()) {
-        keyset_handle->SetPrimaryKey(key_handle);
+        Status status = keyset_handle->SetPrimaryKey(key_handle);
+        if (!status.ok()) {
+          return status;
+        }
       }
     }
     return keyset_handle;
@@ -66,7 +69,10 @@ class KeysetUtil {
       const auto& cloned_key = status_or_cloned_key.ValueOrDie();
       cloned_keyset_handle->key_handles_.push_back(cloned_key);
       if (key_handle == keyset_handle->PrimaryKey()) {
-        cloned_keyset_handle->SetPrimaryKey(cloned_key);
+        Status status = cloned_keyset_handle->SetPrimaryKey(cloned_key);
+        if (!status.ok()) {
+          return status;
+        }
       }
     }
     return cloned_keyset_handle;

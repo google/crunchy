@@ -14,15 +14,13 @@
 
 #include "crunchy/key_management/keyset_handle.h"
 
+#include <stddef.h>
 #include <stdint.h>
-#include <sys/types.h>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "absl/memory/memory.h"
 #include "crunchy/internal/keys/key_util.h"
-#include "crunchy/key_management/internal/keyset.pb.h"
 #include "crunchy/key_management/key_handle.h"
 #include "crunchy/util/status.h"
 
@@ -41,7 +39,10 @@ StatusOr<std::shared_ptr<KeysetHandle>> KeysetHandle::CloneAsPublicOnly() {
     auto cloned_key = status_or_cloned_key.ValueOrDie();
     cloned_keyset_handle->key_handles_.push_back(cloned_key);
     if (key_handle == primary_key_) {
-      cloned_keyset_handle->SetPrimaryKey(cloned_key);
+      Status status = cloned_keyset_handle->SetPrimaryKey(cloned_key);
+      if (!status.ok()) {
+        return status;
+      }
     }
   }
   return cloned_keyset_handle;

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CRUNCHY_ALGS_CRYPT_AES_GCM_H_
-#define CRUNCHY_ALGS_CRYPT_AES_GCM_H_
+#ifndef CRUNCHY_ALGS_CRYPT_OPENSSL_AEAD_H_
+#define CRUNCHY_ALGS_CRYPT_OPENSSL_AEAD_H_
 
 #include "crunchy/internal/algs/crypt/crypter_base.h"
 #include "crunchy/internal/algs/crypt/crypter_interface.h"
@@ -31,7 +31,10 @@ namespace crunchy {
 
 const CrypterFactory& GetAes128GcmFactory();
 const CrypterFactory& GetAes256GcmFactory();
+const CrypterFactory& GetChaCha20Poly1305Factory();
+const CrypterFactory& GetAes128GcmSivFactory();
+const CrypterFactory& GetAes256GcmSivFactory();
 
 }  // namespace crunchy
 
-#endif  // CRUNCHY_ALGS_CRYPT_AES_GCM_H_
+#endif  // CRUNCHY_ALGS_CRYPT_OPENSSL_AEAD_H_

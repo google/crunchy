@@ -22,10 +22,13 @@ cc_test(
         "basic_aead_test.cc",
     ],
     deps = [
+        "//crunchy:crunchy_crypter",
         "//crunchy/internal/common:status_matchers",
         "//crunchy/key_management:crunchy_factory",
+        "//crunchy/key_management:keyset_handle",
         "//crunchy/key_management:keyset_manager",
         "//crunchy/util:status",
+        "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -36,10 +39,13 @@ cc_test(
         "basic_hybrid_test.cc",
     ],
     deps = [
+        "//crunchy:crunchy_hybrid_crypter",
         "//crunchy/internal/common:status_matchers",
         "//crunchy/key_management:crunchy_factory",
+        "//crunchy/key_management:keyset_handle",
         "//crunchy/key_management:keyset_manager",
         "//crunchy/util:status",
+        "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -50,10 +56,13 @@ cc_test(
         "basic_macing_test.cc",
     ],
     deps = [
+        "//crunchy:crunchy_macer",
         "//crunchy/internal/common:status_matchers",
         "//crunchy/key_management:crunchy_factory",
+        "//crunchy/key_management:keyset_handle",
         "//crunchy/key_management:keyset_manager",
         "//crunchy/util:status",
+        "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -64,10 +73,13 @@ cc_test(
         "basic_signing_test.cc",
     ],
     deps = [
+        "//crunchy:crunchy_signer",
         "//crunchy/internal/common:status_matchers",
         "//crunchy/key_management:crunchy_factory",
+        "//crunchy/key_management:keyset_handle",
         "//crunchy/key_management:keyset_manager",
         "//crunchy/util:status",
+        "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest_main",
     ],
 )

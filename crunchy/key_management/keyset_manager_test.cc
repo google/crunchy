@@ -14,12 +14,17 @@
 
 #include "crunchy/key_management/keyset_manager.h"
 
-#include <gmock/gmock.h>
+#include <stdint.h>
+#include <string>
+
 #include <gtest/gtest.h>
+#include "absl/memory/memory.h"
 #include "crunchy/internal/algs/random/crypto_rand.h"
 #include "crunchy/crunchy_crypter.h"
 #include "crunchy/internal/common/status_matchers.h"
 #include "crunchy/internal/keys/key_util.h"
+#include "crunchy/internal/port/port.h"
+#include "crunchy/key_management/internal/keyset.pb.h"
 #include "crunchy/util/status.h"
 
 namespace crunchy {
@@ -39,23 +44,6 @@ TEST_P(KeysetManagerTest, GenerateAndAddNewKeyAsPrimary) {
 
   EXPECT_EQ(1, keyset_manager->KeyHandles().size());
   EXPECT_EQ(GetParam(), key_handle->metadata().type().google_key_type_label());
-  EXPECT_EQ(key_handle, keyset_manager->PrimaryKey());
-}
-
-TEST_P(KeysetManagerTest, GenerateAndAddNewKeyAsPrimaryWithPrefix) {
-  auto keyset_handle = std::make_shared<KeysetHandle>();
-  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
-
-  const std::string key_prefix = RandString(32);
-  auto status_or_key_handle =
-      keyset_manager->GenerateAndAddNewKey(GetParam(), key_prefix);
-  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
-  auto key_handle = status_or_key_handle.ValueOrDie();
-  CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));
-
-  EXPECT_EQ(1, keyset_manager->KeyHandles().size());
-  EXPECT_EQ(GetParam(), key_handle->metadata().type().google_key_type_label());
-  EXPECT_EQ(key_prefix, key_handle->metadata().prefix());
   EXPECT_EQ(key_handle, keyset_manager->PrimaryKey());
 }
 
@@ -213,6 +201,138 @@ TEST_P(KeysetManagerTest, DeleteOldestKeyOldestKeyIsPrimaryError) {
   EXPECT_EQ(FailedPreconditionError(
                 "Oldest key is primary key. Can't delete oldest key."),
             keyset_manager->DeleteOldestKey().status());
+}
+
+TEST_P(KeysetManagerTest, GenerateAndAddNewKeyIncrementalTwoBytePrefix) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+
+  const int kNumKeys = 100;
+  for (uint16_t i = 0; i < kNumKeys; ++i) {
+    auto status_or_key_handle =
+        keyset_manager->GenerateAndAddNewKey(GetParam());
+    CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+    auto key_handle = status_or_key_handle.ValueOrDie();
+    const uint16_t generated_prefix =
+        BigEndianLoad16(key_handle->metadata().prefix().data());
+    EXPECT_EQ(i, generated_prefix);
+  }
+}
+
+TEST_P(KeysetManagerTest,
+       GenerateAndAddNewKeyIncrementalTwoBytePrefixChooseNext) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+
+  const int kNumKeys = 100;
+  for (uint16_t i = 0; i < kNumKeys; ++i) {
+    auto status_or_key_handle =
+        keyset_manager->GenerateAndAddNewKey(GetParam());
+    CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  }
+
+  // Delete random key.
+  const int key_index_to_delete = 43;
+  auto advanced_keyset_manager =
+      ::absl::make_unique<AdvancedKeysetManager>(keyset_handle);
+  auto key_handle_to_delete =
+      keyset_handle->key_handles().at(key_index_to_delete);
+  CRUNCHY_EXPECT_OK(advanced_keyset_manager->RemoveKey(key_handle_to_delete));
+  CRUNCHY_EXPECT_OK(keyset_manager->GarbageCollectKeys());
+
+  // Ensure deleted key has index kNumKeys.
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle = status_or_key_handle.ValueOrDie();
+  const uint16_t generated_prefix =
+      BigEndianLoad16(key_handle->metadata().prefix().data());
+  EXPECT_EQ(kNumKeys, generated_prefix);
+}
+
+TEST_P(KeysetManagerTest, GenerateAndAddNewKeyIncrementalTwoBytePrefixFromOne) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+
+  // Create a key with prefix "\x00\x01" and add it to the keyset.
+  auto advanced_keyset_manager =
+      ::absl::make_unique<AdvancedKeysetManager>(keyset_handle);
+  auto status_or_key_handle =
+      advanced_keyset_manager->CreateNewKey(GetParam(), std::string("\x00\x01", 2));
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+
+  // Expect the next key to be "\x00\x02"
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle = status_or_key_handle.ValueOrDie();
+  const std::string expected_prefix = std::string("\x00\x02", 2);
+  EXPECT_EQ(expected_prefix, key_handle->metadata().prefix());
+}
+
+TEST_P(KeysetManagerTest, GenerateAndAddNewKeyIncrementalTwoBytePrefixFromMax) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+
+  // Create a key with prefix "\xFF\xFF" and add it to the keyset.
+  auto advanced_keyset_manager =
+      ::absl::make_unique<AdvancedKeysetManager>(keyset_handle);
+  auto status_or_key_handle =
+      advanced_keyset_manager->CreateNewKey(GetParam(), "\xFF\xFF");
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+
+  // Expect the next key to be "\x00\x00"
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle = status_or_key_handle.ValueOrDie();
+  const std::string expected_prefix = std::string("\x00\x00", 2);
+  EXPECT_EQ(expected_prefix, key_handle->metadata().prefix());
+}
+
+TEST_P(KeysetManagerTest,
+       GenerateAndAddNewKeyIncrementalTwoBytePrefixFromBigCollision) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+
+  // Create a keys with prefixs "\x00\x00" and "\x00\x01xy" and add them to the
+  // keyset.
+  auto advanced_keyset_manager =
+      ::absl::make_unique<AdvancedKeysetManager>(keyset_handle);
+  auto status_or_key_handle =
+      advanced_keyset_manager->CreateNewKey(GetParam(), std::string("\x00\x00", 2));
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  status_or_key_handle = advanced_keyset_manager->CreateNewKey(
+      GetParam(), std::string("\x00\x01xy", 4));
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+
+  // Expect the next key to be "\x00\x02"
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle = status_or_key_handle.ValueOrDie();
+  const std::string expected_prefix = std::string("\x00\x02", 2);
+  EXPECT_EQ(expected_prefix, key_handle->metadata().prefix());
+}
+
+TEST_P(KeysetManagerTest,
+       GenerateAndAddNewKeyIncrementalTwoBytePrefixFromSmallCollision) {
+  auto keyset_handle = std::make_shared<KeysetHandle>();
+
+  // Create a keys with prefixs "\x00\xFF" and "\x01" and add them to the
+  // keyset.
+  auto advanced_keyset_manager =
+      ::absl::make_unique<AdvancedKeysetManager>(keyset_handle);
+  auto status_or_key_handle =
+      advanced_keyset_manager->CreateNewKey(GetParam(), std::string("\x00\xFF", 2));
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  status_or_key_handle =
+      advanced_keyset_manager->CreateNewKey(GetParam(), "\x01");
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+
+  // Expect the next key to be "\x01\x01"
+  auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
+  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  CRUNCHY_EXPECT_OK(status_or_key_handle.status());
+  auto key_handle = status_or_key_handle.ValueOrDie();
+  const std::string expected_prefix = std::string("\x02\x00", 2);
+  EXPECT_EQ(expected_prefix, key_handle->metadata().prefix());
 }
 
 INSTANTIATE_TEST_CASE_P(CrypterKeysetManagerTest, KeysetManagerTest,

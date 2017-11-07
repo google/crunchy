@@ -42,6 +42,7 @@ cc_library(
         "//crunchy/internal/keys:key_util",
         "//crunchy/internal/keyset:aead_crypting_key_registry",
         "//crunchy/internal/keyset:hybrid_crypting_key_registry",
+        "//crunchy/internal/keyset:key_registry",
         "//crunchy/internal/keyset:macing_key_registry",
         "//crunchy/internal/keyset:signing_key_registry",
         "//crunchy/key_management:key_handle",

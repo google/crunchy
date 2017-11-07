@@ -31,23 +31,19 @@ namespace crunchy {
 
 namespace {
 
-StatusOr<KeyData> KeyDataFromKeyLabel(const absl::string_view key_label) {
-  if (key_label == "aes-128-gcm") {
-    const AeadCryptingKeyRegistry& registry = GetAeadCryptingKeyRegistry();
-    return registry.CreateRandomKeyData(key_label);
-  } else if (key_label == "x25519-aes-256-gcm") {
-    const HybridCryptingKeyRegistry& registry = GetHybridCryptingKeyRegistry();
-    return registry.CreateRandomPrivateKeyData(key_label);
-  } else if (key_label == "hmac-sha256-halfdigest") {
-    const MacingKeyRegistry& registry = GetMacingKeyRegistry();
-    return registry.CreateRandomKeyData(key_label);
-  } else if (key_label == "p256-ecdsa") {
-    const SigningKeyRegistry& registry = GetSigningKeyRegistry();
-    return registry.CreateRandomPrivateKeyData(key_label);
+StatusOr<const KeyRegistry*> DefaultKeyRegistryForKeyLabel(
+    const absl::string_view key_label) {
+  if (GetAeadCryptingKeyRegistry().contains(key_label)) {
+    return &GetAeadCryptingKeyRegistry();
+  } else if (GetHybridCryptingKeyRegistry().contains(key_label)) {
+    return &GetHybridCryptingKeyRegistry();
+  } else if (GetMacingKeyRegistry().contains(key_label)) {
+    return &GetMacingKeyRegistry();
+  } else if (GetSigningKeyRegistry().contains(key_label)) {
+    return &GetSigningKeyRegistry();
   } else {
     return InvalidArgumentError(
-        StrCat("Invalid key_label[", key_label,
-               "] specified. Can't generated KeyData from key_label."));
+        StrCat("Invalid key_label[", key_label, "] specified."));
   }
 }
 
@@ -60,8 +56,20 @@ AdvancedKeysetManager::KeyHandles() {
 
 StatusOr<std::shared_ptr<KeyHandle>> AdvancedKeysetManager::CreateNewKey(
     const absl::string_view key_label, const absl::string_view key_prefix) {
+  StatusOr<const KeyRegistry*> status_or_key_registry =
+      DefaultKeyRegistryForKeyLabel(key_label);
+  if (!status_or_key_registry.ok()) {
+    return status_or_key_registry.status();
+  }
+  auto key_registry = status_or_key_registry.ValueOrDie();
+  return CreateNewKey(*key_registry, key_label, key_prefix);
+}
+
+StatusOr<std::shared_ptr<KeyHandle>> AdvancedKeysetManager::CreateNewKey(
+    const KeyRegistry& key_registry, const absl::string_view key_label,
+    const absl::string_view key_prefix) {
   Key key;
-  auto status_or_key_data = KeyDataFromKeyLabel(key_label);
+  auto status_or_key_data = key_registry.CreateKeyData(key_label);
   if (!status_or_key_data.ok()) {
     return status_or_key_data.status();
   }

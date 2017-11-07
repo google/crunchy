@@ -18,6 +18,7 @@
 
 #include "absl/memory/memory.h"
 #include "crunchy/internal/algs/random/crypto_rand.h"
+#include "crunchy/internal/port/port.h"
 
 namespace crunchy {
 

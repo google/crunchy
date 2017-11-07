@@ -62,12 +62,16 @@ cc_library(
         "keyset_manager.h",
     ],
     deps = [
+        ":key_handle",
         ":keyset_enums_proto_cc",
         ":keyset_handle",
         "//crunchy/internal/algs/random:crypto_rand",
+        "//crunchy/internal/port",
         "//crunchy/key_management/internal:advanced_keyset_manager",
         "//crunchy/key_management/internal:keyset_proto_cc",
         "//crunchy/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
     ],
 )
 
@@ -82,7 +86,10 @@ cc_test(
         "//crunchy/internal/algs/random:crypto_rand",
         "//crunchy/internal/common:status_matchers",
         "//crunchy/internal/keys:key_util",
+        "//crunchy/internal/port",
+        "//crunchy/key_management/internal:keyset_proto_cc",
         "//crunchy/util:status",
+        "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -98,7 +105,9 @@ cc_library(
     deps = [
         ":keyset_handle",
         "//crunchy/internal/keyset:keyset_util",
+        "//crunchy/key_management/internal:keyset_proto_cc",
         "//crunchy/util:status",
+        "@com_google_absl//absl/strings",
     ],
 )
 
@@ -112,7 +121,9 @@ cc_test(
         ":keyset_serialization",
         "//crunchy/internal/common:status_matchers",
         "//crunchy/internal/keys:key_util",
+        "//crunchy/key_management/internal:keyset_proto_cc",
         "//crunchy/util:status",
+        "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -131,6 +142,7 @@ cc_library(
         "//crunchy:crunchy_hybrid_crypter",
         "//crunchy:crunchy_macer",
         "//crunchy:crunchy_signer",
+        "//crunchy/internal/keyset:aead_crypting_key_registry",
         "//crunchy/internal/keyset:crypter_factory",
         "//crunchy/internal/keyset:hybrid_crypter_factory",
         "//crunchy/internal/keyset:hybrid_crypting_key_registry",
@@ -139,5 +151,7 @@ cc_library(
         "//crunchy/internal/keyset:macing_key_registry",
         "//crunchy/internal/keyset:signer_factory",
         "//crunchy/internal/keyset:signing_key_registry",
+        "//crunchy/key_management/internal:keyset_proto_cc",
+        "//crunchy/util:status",
     ],
 )

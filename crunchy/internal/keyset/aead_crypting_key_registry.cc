@@ -14,12 +14,11 @@
 
 #include "crunchy/internal/keyset/aead_crypting_key_registry.h"
 
-#include <type_traits>
 #include <utility>
 
 #include "absl/memory/memory.h"
 #include "crunchy/internal/algs/crypt/aes_eax.h"
-#include "crunchy/internal/algs/crypt/aes_gcm.h"
+#include "crunchy/internal/algs/crypt/openssl_aead.h"
 #include "crunchy/internal/port/port.h"
 
 namespace crunchy {

@@ -12,10 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gmock/gmock.h>
+#include <memory>
+#include <string>
+#include <utility>
+
 #include <gtest/gtest.h>
+#include "absl/memory/memory.h"
+#include "crunchy/crunchy_hybrid_crypter.h"
 #include "crunchy/internal/common/status_matchers.h"
 #include "crunchy/key_management/crunchy_factory.h"
+#include "crunchy/key_management/keyset_handle.h"
 #include "crunchy/key_management/keyset_manager.h"
 #include "crunchy/util/status.h"
 

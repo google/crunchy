@@ -18,7 +18,7 @@ Contact us at crunchy-discuss@googlegroups.com
 
 CrunchyCrypt is an open-source collection of cryptography APIs, safe and
 easy-to-use wrappings of lower-level crypto libraries such as boringssl.
-Although CrunchyCrypt is intended to primarily be a currated collection of
+Although CrunchyCrypt is intended to primarily be a curated collection of
 modern cryptography, CrunchyCrypt is designed to be extendable to both
 bleeding-edge and legacy cryptography.
 
@@ -50,7 +50,7 @@ CrunchyCrypt supports the following primitives in C++:
 * [`Digital Signatures`](crunchy/crunchy_signer.h), aka asymmetric
   authentication
   <br /> We support P256-ECDSA, Ed25519, and RSA-PKCS1 using SHA256 and a
-  2048-bit modulus
+  2048-bit modulus.
 * [`Hybrid Encryption`](crunchy/crunchy_hybrid_crypter.h), aka asymmetric
   encryption
   <br /> We support ECIES using HKDF and AEADs in various combinations,
@@ -65,7 +65,7 @@ build target.
 
 [`Java APIs`](crunchy/java/src/main/java/com/google/security/crunchy/) for the
 above are implemented via [`JNI
-bindings`](crunchy/java/src/main/com/google/security/crunchy/jni)
+bindings`](crunchy/java/src/main/com/google/security/crunchy/jni).
 
 Some internal APIs may be eventually made user-facing as we gain more experience
 as to how they might be used. For example,
@@ -83,7 +83,7 @@ path.
 We ask that you:
 
 * Don't open the crunchy namespace.
-* Don't forward declare crunchy types.
+* Don't forward-declare crunchy types.
 * Don't depend on internal details, namespaces or files that contain the word
   "internal".
 

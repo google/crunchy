@@ -14,10 +14,13 @@
 
 #include "crunchy/key_management/keyset_serialization.h"
 
-#include <gmock/gmock.h>
+#include <vector>
+
 #include <gtest/gtest.h>
+#include "absl/memory/memory.h"
 #include "crunchy/internal/common/status_matchers.h"
 #include "crunchy/internal/keys/key_util.h"
+#include "crunchy/key_management/internal/keyset.pb.h"
 #include "crunchy/key_management/keyset_manager.h"
 #include "crunchy/util/status.h"
 

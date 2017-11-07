@@ -31,7 +31,6 @@
 
 using absl::make_unique;
 using testing::HasSubstr;
-using testing::_;
 using testing::crunchy_status::StatusIs;
 
 namespace crunchy {
@@ -215,7 +214,7 @@ void EncryptionFailureTest(const CrypterFactory& factory,
                        message.get(), message_length, ciphertext_and_tag.get(),
                        ciphertext_and_tag_length, &ciphertext_bytes_written),
       StatusIs(INVALID_ARGUMENT,
-               HasSubstr("Nonce buffer has the wrong length.")));
+               HasSubstr("Nonce buffer has the wrong length")));
 
   // Small nonce.
   EXPECT_THAT(
@@ -223,7 +222,7 @@ void EncryptionFailureTest(const CrypterFactory& factory,
                        message.get(), message_length, ciphertext_and_tag.get(),
                        ciphertext_and_tag_length, &ciphertext_bytes_written),
       StatusIs(INVALID_ARGUMENT,
-               HasSubstr("Nonce buffer has the wrong length.")));
+               HasSubstr("Nonce buffer has the wrong length")));
 
   // Null aad.
   EXPECT_THAT(
@@ -339,7 +338,7 @@ void DecryptionFailureTest(const CrypterFactory& factory) {
                                ciphertext_and_tag_length, plaintext.get(),
                                plaintext_length, &plaintext_bytes_written),
               StatusIs(INVALID_ARGUMENT,
-                       HasSubstr("Nonce buffer has the wrong length.")));
+                       HasSubstr("Nonce buffer has the wrong length")));
 
   // Small nonce.
   EXPECT_THAT(crypter->Decrypt(nonce.get(), nonce_length - 1, aad.get(),
@@ -347,7 +346,7 @@ void DecryptionFailureTest(const CrypterFactory& factory) {
                                ciphertext_and_tag_length, plaintext.get(),
                                plaintext_length, &plaintext_bytes_written),
               StatusIs(INVALID_ARGUMENT,
-                       HasSubstr("Nonce buffer has the wrong length.")));
+                       HasSubstr("Nonce buffer has the wrong length")));
 
   // Null aad.
   EXPECT_THAT(
@@ -506,7 +505,7 @@ void EncryptionFailureStringTest(const CrypterFactory& factory) {
   if (crypter->nonce_length() > 0) {
     EXPECT_THAT(crypter->Encrypt("", aad, message),
                 StatusIs(INVALID_ARGUMENT,
-                         HasSubstr("Nonce buffer has the wrong length.")));
+                         HasSubstr("Nonce buffer has the wrong length")));
   }
 
   // Success.
@@ -533,7 +532,7 @@ void DecryptionFailureStringTest(CrypterInterface* crypter) {
   if (crypter->nonce_length() > 0) {
     EXPECT_THAT(crypter->Decrypt("", aad, ciphertext_and_tag),
                 StatusIs(INVALID_ARGUMENT,
-                         HasSubstr("Nonce buffer has the wrong length.")));
+                         HasSubstr("Nonce buffer has the wrong length")));
   }
 
   // Empty ciphertext.

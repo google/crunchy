@@ -14,26 +14,22 @@
 
 #include "crunchy/internal/bindings/crypto.h"
 
-#include <memory>
 #include <string>
-#include <type_traits>
-#include <utility>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "absl/strings/string_view.h"
 #include "crunchy/internal/common/file.h"
 #include "crunchy/internal/common/status_matchers.h"
 #include "crunchy/internal/common/string_buffer.h"
 #include "crunchy/internal/keyset/aead_crypting_key_registry.h"
 #include "crunchy/internal/keyset/testdata/factory_test_vectors.pb.h"
+#include "crunchy/internal/port/port.h"
 #include "crunchy/key_management/internal/keyset.pb.h"
 #include "crunchy/util/status.h"
 
 namespace crunchy {
 namespace {
 
-using testing::HasSubstr;
 using testing::StartsWith;
 
 TEST(CrypterTest, UnparsableKeyset) {

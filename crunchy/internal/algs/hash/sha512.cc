@@ -21,7 +21,12 @@
 
 namespace crunchy {
 
-StatusOr<std::string> Sha512Hash(absl::string_view input) {
+const Sha512& Sha512::Instance() {
+  static const Sha512& instance = *new Sha512();
+  return instance;
+}
+
+StatusOr<std::string> Sha512::Hash(absl::string_view input) const {
   uint8_t digest[EVP_MAX_MD_SIZE];
   unsigned int digest_length = 0;
   if (EVP_Digest(input.data(), input.size(), digest, &digest_length,
@@ -30,6 +35,15 @@ StatusOr<std::string> Sha512Hash(absl::string_view input) {
            << "Openssl internal error computing sha512: " << GetOpensslErrors();
   }
   return std::string(reinterpret_cast<const char*>(digest), digest_length);
+}
+
+StatusOr<std::string> Sha512Hash(absl::string_view input) {
+  return Sha512::Instance().Hash(input);
+}
+
+StatusOr<int> Sha512::OpensslNameId() const { return NID_sha512; }
+StatusOr<const EVP_MD*> Sha512::OpensslMessageDigest() const {
+  return EVP_sha512();
 }
 
 }  // namespace crunchy

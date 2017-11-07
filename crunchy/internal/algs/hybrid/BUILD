@@ -121,8 +121,8 @@ cc_library(
     srcs = ["dem.cc"],
     hdrs = ["dem.h"],
     deps = [
-        "//crunchy/internal/algs/crypt:aes_gcm",
         "//crunchy/internal/algs/crypt:crypter_interface",
+        "//crunchy/internal/algs/crypt:openssl_aead",
         "//crunchy/internal/algs/random:crypto_rand",
         "//crunchy/util:status",
         "@com_google_absl//absl/memory",

@@ -15,6 +15,10 @@
 #ifndef CRUNCHY_KEY_MANAGEMENT_INTEROPERABILITY_H_
 #define CRUNCHY_KEY_MANAGEMENT_INTEROPERABILITY_H_
 
+#include <memory>
+#include <string>
+
+#include "absl/strings/string_view.h"
 #include "crunchy/key_management/keyset_handle.h"
 #include "crunchy/util/status.h"
 

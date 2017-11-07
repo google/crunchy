@@ -21,12 +21,13 @@
 
 #include "absl/strings/string_view.h"
 #include "crunchy/internal/keys/aead_crypting_key.h"
+#include "crunchy/internal/keyset/key_registry.h"
 #include "crunchy/key_management/internal/keyset.pb.h"
 #include "crunchy/util/status.h"
 
 namespace crunchy {
 
-class AeadCryptingKeyRegistry {
+class AeadCryptingKeyRegistry : public KeyRegistry {
  public:
   AeadCryptingKeyRegistry() = default;
 
@@ -40,6 +41,15 @@ class AeadCryptingKeyRegistry {
 
   Status Register(absl::string_view key_label,
                   std::unique_ptr<AeadCryptingKeyFactory> key_factory);
+
+  bool contains(const absl::string_view key_label) const override {
+    return factory_map_.find(std::string(key_label)) != factory_map_.end();
+  }
+
+  StatusOr<KeyData> CreateKeyData(
+      const absl::string_view key_label) const override {
+    return CreateRandomKeyData(key_label);
+  }
 
  private:
   std::map<std::string, std::unique_ptr<AeadCryptingKeyFactory>> factory_map_;

@@ -14,6 +14,7 @@
 
 #include "crunchy/internal/keyset/hybrid_crypter_factory.h"
 
+#include <stddef.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -35,7 +36,7 @@ class HybridEncrypterImpl : public CrunchyHybridEncrypter {
                       absl::string_view prefix)
       : key_(std::move(key)), prefix_(prefix) {}
 
-  virtual StatusOr<std::string> Encrypt(absl::string_view plaintext) const {
+  StatusOr<std::string> Encrypt(absl::string_view plaintext) const override {
     auto status_or_ciphertext = key_->Encrypt(plaintext);
     if (!status_or_ciphertext.ok()) {
       return status_or_ciphertext.status();
@@ -56,7 +57,7 @@ class HybridDecrypterImpl : public CrunchyHybridDecrypter {
     CRUNCHY_CHECK_EQ(keys_.size(), prefices_.size());
   }
 
-  virtual StatusOr<std::string> Decrypt(absl::string_view ciphertext) const {
+  StatusOr<std::string> Decrypt(absl::string_view ciphertext) const override {
     bool key_found = false;
     Status error_status;
     for (size_t i = 0; i < keys_.size(); i++) {

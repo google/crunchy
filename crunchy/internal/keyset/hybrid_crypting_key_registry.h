@@ -21,14 +21,16 @@
 
 #include "absl/strings/string_view.h"
 #include "crunchy/internal/keys/hybrid_crypting_key.h"
+#include "crunchy/internal/keyset/key_registry.h"
 #include "crunchy/key_management/internal/keyset.pb.h"
 #include "crunchy/util/status.h"
 
 namespace crunchy {
 
-class HybridCryptingKeyRegistry {
+class HybridCryptingKeyRegistry : public KeyRegistry {
  public:
   HybridCryptingKeyRegistry() = default;
+  virtual ~HybridCryptingKeyRegistry() = default;
 
   HybridCryptingKeyRegistry(const HybridCryptingKeyRegistry&) = delete;
   HybridCryptingKeyRegistry operator=(const HybridCryptingKeyRegistry&) =
@@ -47,6 +49,15 @@ class HybridCryptingKeyRegistry {
 
   Status Register(absl::string_view key_label,
                   std::unique_ptr<HybridCryptingKeyFactory> key_factory);
+
+  bool contains(const absl::string_view key_label) const override {
+    return factory_map_.find(std::string(key_label)) != factory_map_.end();
+  }
+
+  StatusOr<KeyData> CreateKeyData(
+      const absl::string_view key_label) const override {
+    return CreateRandomPrivateKeyData(key_label);
+  }
 
  private:
   std::map<std::string, std::unique_ptr<HybridCryptingKeyFactory>> factory_map_;

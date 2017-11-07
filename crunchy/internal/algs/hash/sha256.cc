@@ -21,7 +21,12 @@
 
 namespace crunchy {
 
-StatusOr<std::string> Sha256Hash(absl::string_view input) {
+const Sha256& Sha256::Instance() {
+  static const Sha256& instance = *new Sha256();
+  return instance;
+}
+
+StatusOr<std::string> Sha256::Hash(absl::string_view input) const {
   uint8_t digest[EVP_MAX_MD_SIZE];
   unsigned int digest_length = 0;
   if (EVP_Digest(input.data(), input.size(), digest, &digest_length,
@@ -32,8 +37,8 @@ StatusOr<std::string> Sha256Hash(absl::string_view input) {
   return std::string(reinterpret_cast<const char*>(digest), digest_length);
 }
 
-StatusOr<std::string> Sha256Hash(absl::string_view input1,
-                            absl::string_view input2) {
+StatusOr<std::string> Sha256::Hash(absl::string_view input1,
+                              absl::string_view input2) const {
   auto ctx = EVP_MD_CTX_create();
   uint8_t digest[EVP_MAX_MD_SIZE];
   unsigned int digest_length = 0;
@@ -48,5 +53,18 @@ StatusOr<std::string> Sha256Hash(absl::string_view input1,
   return std::string(reinterpret_cast<const char*>(digest), digest_length);
 }
 
-}  // namespace crunchy
+StatusOr<std::string> Sha256Hash(absl::string_view input) {
+  return Sha256::Instance().Hash(input);
+}
 
+StatusOr<std::string> Sha256Hash(absl::string_view input1,
+                            absl::string_view input2) {
+  return Sha256::Instance().Hash(input1, input2);
+}
+
+StatusOr<int> Sha256::OpensslNameId() const { return NID_sha256; }
+StatusOr<const EVP_MD*> Sha256::OpensslMessageDigest() const {
+  return EVP_sha256();
+}
+
+}  // namespace crunchy

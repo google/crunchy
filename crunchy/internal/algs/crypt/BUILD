@@ -60,9 +60,9 @@ cc_library(
 )
 
 cc_library(
-    name = "aes_gcm",
-    srcs = ["aes_gcm.cc"],
-    hdrs = ["aes_gcm.h"],
+    name = "openssl_aead",
+    srcs = ["openssl_aead.cc"],
+    hdrs = ["openssl_aead.h"],
     deps = [
         ":crypter_base",
         ":crypter_interface",
@@ -76,13 +76,13 @@ cc_library(
 )
 
 cc_test(
-    name = "aes_gcm_test",
-    srcs = ["aes_gcm_test.cc"],
+    name = "openssl_aead_test",
+    srcs = ["openssl_aead_test.cc"],
     data = ["//crunchy/internal/algs/crypt/testdata"],
     deps = [
-        ":aes_gcm",
         ":crypter_interface",
         ":crypter_test",
+        ":openssl_aead",
         "//crunchy/internal/algs/crypt/testdata:crypter_test_vectors_proto_cc",
         "//crunchy/internal/common:flags",
         "//crunchy/internal/common:init",

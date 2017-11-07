@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "crunchy/internal/algs/crypt/aes_gcm.h"
+#include "crunchy/internal/algs/crypt/openssl_aead.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -39,7 +39,11 @@ const size_t kAesGcmTagLength = 16;
 const size_t kAes128GcmKeyLength = 16;
 const size_t kAes256GcmKeyLength = 32;
 
-class AesGcmCrypter : public CrypterBase {
+const size_t kChaCha20Poly1305KeyLength = 32;
+const size_t kChaCha20Poly1305NonceLength = 12;
+const size_t kChaCha20Poly1305TagLength = 16;
+
+class OpensslAeadCrypter : public CrypterBase {
  public:
   Status Encrypt(const uint8_t* nonce, size_t nonce_length, const uint8_t* aad,
                  size_t aad_length, const uint8_t* plaintext,
@@ -69,12 +73,13 @@ class AesGcmCrypter : public CrypterBase {
   bssl::ScopedEVP_AEAD_CTX aead_ctx_;
 };
 
-Status AesGcmCrypter::Encrypt(const uint8_t* nonce, size_t nonce_length,
-                              const uint8_t* aad, size_t aad_length,
-                              const uint8_t* plaintext, size_t plaintext_length,
-                              uint8_t* ciphertext_and_tag,
-                              size_t ciphertext_and_tag_length,
-                              size_t* bytes_written) {
+Status OpensslAeadCrypter::Encrypt(const uint8_t* nonce, size_t nonce_length,
+                                   const uint8_t* aad, size_t aad_length,
+                                   const uint8_t* plaintext,
+                                   size_t plaintext_length,
+                                   uint8_t* ciphertext_and_tag,
+                                   size_t ciphertext_and_tag_length,
+                                   size_t* bytes_written) {
   Status status = CheckEncryptInput(
       nonce, nonce_length, aad, aad_length, plaintext, plaintext_length,
       ciphertext_and_tag, ciphertext_and_tag_length, bytes_written);
@@ -91,12 +96,12 @@ Status AesGcmCrypter::Encrypt(const uint8_t* nonce, size_t nonce_length,
   return OkStatus();
 }
 
-Status AesGcmCrypter::Decrypt(const uint8_t* nonce, size_t nonce_length,
-                              const uint8_t* aad, size_t aad_length,
-                              const uint8_t* ciphertext_and_tag,
-                              size_t ciphertext_and_tag_length,
-                              uint8_t* plaintext, size_t plaintext_length,
-                              size_t* bytes_written) {
+Status OpensslAeadCrypter::Decrypt(const uint8_t* nonce, size_t nonce_length,
+                                   const uint8_t* aad, size_t aad_length,
+                                   const uint8_t* ciphertext_and_tag,
+                                   size_t ciphertext_and_tag_length,
+                                   uint8_t* plaintext, size_t plaintext_length,
+                                   size_t* bytes_written) {
   Status status = CheckDecryptInput(
       nonce, nonce_length, aad, aad_length, plaintext, plaintext_length,
       ciphertext_and_tag, ciphertext_and_tag_length, bytes_written);
@@ -121,11 +126,9 @@ Status AesGcmCrypter::Decrypt(const uint8_t* nonce, size_t nonce_length,
   return OkStatus();
 }
 
-class Aes128GcmFactory : public CrypterFactory {
+class OpensslAeadFactory : public CrypterFactory {
  public:
-  size_t GetKeyLength() const override { return kAes128GcmKeyLength; }
-  size_t GetNonceLength() const override { return kAesGcmNonceLength; }
-  size_t GetTagLength() const override { return kAesGcmTagLength; }
+  virtual const EVP_AEAD* GetOpensslEvpAead() const = 0;
 
   StatusOr<std::unique_ptr<CrypterInterface>> Make(
       absl::string_view key) const override {
@@ -134,8 +137,8 @@ class Aes128GcmFactory : public CrypterFactory {
              << "Key length was " << key.size() << " expected "
              << GetKeyLength();
     }
-    auto crypter = absl::make_unique<AesGcmCrypter>();
-    Status status = crypter->Init(key, EVP_aead_aes_128_gcm());
+    auto crypter = absl::make_unique<OpensslAeadCrypter>();
+    Status status = crypter->Init(key, GetOpensslEvpAead());
     if (!status.ok()) {
       return status;
     }
@@ -143,25 +146,55 @@ class Aes128GcmFactory : public CrypterFactory {
   }
 };
 
-class Aes256GcmFactory : public CrypterFactory {
+class Aes128GcmFactory : public OpensslAeadFactory {
+ public:
+  size_t GetKeyLength() const override { return kAes128GcmKeyLength; }
+  size_t GetNonceLength() const override { return kAesGcmNonceLength; }
+  size_t GetTagLength() const override { return kAesGcmTagLength; }
+  const EVP_AEAD* GetOpensslEvpAead() const override {
+    return EVP_aead_aes_128_gcm();
+  }
+};
+
+class Aes256GcmFactory : public OpensslAeadFactory {
  public:
   size_t GetKeyLength() const override { return kAes256GcmKeyLength; }
   size_t GetNonceLength() const override { return kAesGcmNonceLength; }
   size_t GetTagLength() const override { return kAesGcmTagLength; }
+  const EVP_AEAD* GetOpensslEvpAead() const override {
+    return EVP_aead_aes_256_gcm();
+  }
+};
 
-  StatusOr<std::unique_ptr<CrypterInterface>> Make(
-      absl::string_view key) const override {
-    if (key.size() != GetKeyLength()) {
-      return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
-             << "Key length was " << key.size() << " expected "
-             << GetKeyLength();
-    }
-    auto crypter = absl::make_unique<AesGcmCrypter>();
-    Status status = crypter->Init(key, EVP_aead_aes_256_gcm());
-    if (!status.ok()) {
-      return status;
-    }
-    return {std::move(crypter)};
+class ChaCha20Poly1305Factory : public OpensslAeadFactory {
+ public:
+  size_t GetKeyLength() const override { return kChaCha20Poly1305KeyLength; }
+  size_t GetNonceLength() const override {
+    return kChaCha20Poly1305NonceLength;
+  }
+  size_t GetTagLength() const override { return kChaCha20Poly1305TagLength; }
+  const EVP_AEAD* GetOpensslEvpAead() const override {
+    return EVP_aead_chacha20_poly1305();
+  }
+};
+
+class Aes128GcmSivFactory : public OpensslAeadFactory {
+ public:
+  size_t GetKeyLength() const override { return kAes128GcmKeyLength; }
+  size_t GetNonceLength() const override { return kAesGcmNonceLength; }
+  size_t GetTagLength() const override { return kAesGcmTagLength; }
+  const EVP_AEAD* GetOpensslEvpAead() const override {
+    return EVP_aead_aes_128_gcm_siv();
+  }
+};
+
+class Aes256GcmSivFactory : public OpensslAeadFactory {
+ public:
+  size_t GetKeyLength() const override { return kAes256GcmKeyLength; }
+  size_t GetNonceLength() const override { return kAesGcmNonceLength; }
+  size_t GetTagLength() const override { return kAesGcmTagLength; }
+  const EVP_AEAD* GetOpensslEvpAead() const override {
+    return EVP_aead_aes_256_gcm_siv();
   }
 };
 
@@ -174,6 +207,21 @@ const CrypterFactory& GetAes128GcmFactory() {
 
 const CrypterFactory& GetAes256GcmFactory() {
   static const CrypterFactory& factory = *new Aes256GcmFactory();
+  return factory;
+}
+
+const CrypterFactory& GetChaCha20Poly1305Factory() {
+  static const CrypterFactory& factory = *new ChaCha20Poly1305Factory();
+  return factory;
+}
+
+const CrypterFactory& GetAes128GcmSivFactory() {
+  static const CrypterFactory& factory = *new Aes128GcmSivFactory();
+  return factory;
+}
+
+const CrypterFactory& GetAes256GcmSivFactory() {
+  static const CrypterFactory& factory = *new Aes256GcmSivFactory();
   return factory;
 }
 

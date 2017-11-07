@@ -14,6 +14,7 @@
 
 #include "crunchy/internal/keyset/crypter_factory.h"
 
+#include <stddef.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -40,15 +41,15 @@ class CrypterImpl : public CrunchyCrypter {
     CRUNCHY_CHECK_EQ(keys_.size(), prefices_.size());
   }
 
-  virtual StatusOr<std::string> Encrypt(absl::string_view plaintext) const {
+  StatusOr<std::string> Encrypt(absl::string_view plaintext) const override {
     return Encrypt(plaintext, "");
   }
-  virtual StatusOr<std::string> Decrypt(absl::string_view ciphertext) const {
+  StatusOr<std::string> Decrypt(absl::string_view ciphertext) const override {
     return Decrypt(ciphertext, "");
   }
 
-  virtual StatusOr<std::string> Encrypt(absl::string_view plaintext,
-                                   absl::string_view associated_data) const {
+  StatusOr<std::string> Encrypt(absl::string_view plaintext,
+                           absl::string_view associated_data) const override {
     auto status_or_ciphertext =
         primary_key_->Encrypt(plaintext, associated_data);
     if (!status_or_ciphertext.ok()) {
@@ -56,8 +57,8 @@ class CrypterImpl : public CrunchyCrypter {
     }
     return StrCat(primary_prefix_, status_or_ciphertext.ValueOrDie());
   }
-  virtual StatusOr<std::string> Decrypt(absl::string_view ciphertext,
-                                   absl::string_view associated_data) const {
+  StatusOr<std::string> Decrypt(absl::string_view ciphertext,
+                           absl::string_view associated_data) const override {
     bool key_found = false;
     Status error_status;
     for (size_t i = 0; i < keys_.size(); i++) {

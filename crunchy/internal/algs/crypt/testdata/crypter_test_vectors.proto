@@ -15,6 +15,10 @@
 syntax = "proto3";
 
 package crunchy;
+option java_package = "com.google.security.crunchy.algs.crypt";
+
+option java_outer_classname = "CrypterTestVectorsOuterClass";
+option java_multiple_files = true;
 
 message CrypterInterfaceTestVector {
   bytes key = 1;

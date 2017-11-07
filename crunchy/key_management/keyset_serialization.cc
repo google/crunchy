@@ -15,6 +15,7 @@
 #include "crunchy/key_management/keyset_serialization.h"
 
 #include "crunchy/internal/keyset/keyset_util.h"
+#include "crunchy/key_management/internal/keyset.pb.h"
 
 namespace crunchy {
 

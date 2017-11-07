@@ -19,10 +19,22 @@ package(default_visibility = ["//crunchy:internal_pkg"])
 licenses(["notice"])  # Apache 2.0
 
 cc_library(
+    name = "hash_interface",
+    hdrs = ["hash_interface.h"],
+    deps = [
+        "//crunchy/internal/algs/openssl:errors",
+        "//crunchy/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_library(
     name = "sha256",
     srcs = ["sha256.cc"],
     hdrs = ["sha256.h"],
     deps = [
+        ":hash_interface",
         "//crunchy/internal/algs/openssl:errors",
         "//crunchy/util:status",
         "@boringssl//:crypto",
@@ -43,10 +55,35 @@ cc_test(
 )
 
 cc_library(
+    name = "identity",
+    srcs = ["identity.cc"],
+    hdrs = ["identity.h"],
+    deps = [
+        ":hash_interface",
+        "//crunchy/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_test(
+    name = "identity_test",
+    srcs = ["identity_test.cc"],
+    deps = [
+        ":identity",
+        "//crunchy/internal/common:status_matchers",
+        "//crunchy/util:status",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
     name = "sha384",
     srcs = ["sha384.cc"],
     hdrs = ["sha384.h"],
     deps = [
+        ":hash_interface",
         "//crunchy/internal/algs/openssl:errors",
         "//crunchy/util:status",
         "@boringssl//:crypto",
@@ -71,7 +108,7 @@ cc_library(
     srcs = ["sha512.cc"],
     hdrs = ["sha512.h"],
     deps = [
-        ":sha256",
+        ":hash_interface",
         "//crunchy/internal/algs/openssl:errors",
         "//crunchy/util:status",
         "@boringssl//:crypto",

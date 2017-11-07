@@ -18,7 +18,7 @@
 
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
-#include "crunchy/internal/algs/crypt/aes_gcm.h"
+#include "crunchy/internal/algs/crypt/openssl_aead.h"
 #include "crunchy/internal/common/status_matchers.h"
 
 namespace crunchy {

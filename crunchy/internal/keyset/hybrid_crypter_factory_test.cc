@@ -30,6 +30,7 @@
 #include "crunchy/internal/keyset/keyset_util.h"
 #include "crunchy/internal/keyset/testdata/factory_test_vectors.pb.h"
 #include "crunchy/key_management/crunchy_factory.h"
+#include "crunchy/key_management/internal/advanced_keyset_manager.h"
 #include "crunchy/key_management/keyset_handle.h"
 #include "crunchy/key_management/keyset_manager.h"
 
@@ -210,17 +211,17 @@ TEST(KeysetFactoryTest, TwoKey) {
   // Make sure we can decrypt both ciphertexts using a combined keyset.
   std::shared_ptr<KeysetHandle> combined_private_keyset_handle =
       std::make_shared<KeysetHandle>();
-  auto keyset_manager =
-      ::absl::make_unique<KeysetManager>(combined_private_keyset_handle);
+  auto keyset_manager = ::absl::make_unique<AdvancedKeysetManager>(
+      combined_private_keyset_handle);
   EXPECT_EQ(1, private_keyset_handle1->key_handles().size());
   for (const auto& key_handle : private_keyset_handle1->key_handles()) {
-    keyset_manager->AddNewKey(key_handle);
-    keyset_manager->PromoteToPrimary(key_handle);
+    CRUNCHY_ASSERT_OK(keyset_manager->AddKey(key_handle));
+    CRUNCHY_ASSERT_OK(keyset_manager->PromoteToPrimary(key_handle));
   }
   EXPECT_EQ(1, private_keyset_handle2->key_handles().size());
   for (const auto& key_handle : private_keyset_handle2->key_handles()) {
-    keyset_manager->AddNewKey(key_handle);
-    keyset_manager->PromoteToPrimary(key_handle);
+    CRUNCHY_ASSERT_OK(keyset_manager->AddKey(key_handle));
+    CRUNCHY_ASSERT_OK(keyset_manager->PromoteToPrimary(key_handle));
   }
   status_or_decrypter =
       MakeCrunchyHybridDecrypter(combined_private_keyset_handle);
@@ -269,12 +270,11 @@ TEST(KeysetFactoryTest, Prefix) {
   const std::string prefix = RandString(prefix_length);
   auto private_prefix_keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager =
-      ::absl::make_unique<KeysetManager>(private_prefix_keyset_handle);
-  auto status_or_key_handle =
-      keyset_manager->GenerateAndAddNewKey(kKeyUri, prefix);
+      ::absl::make_unique<AdvancedKeysetManager>(private_prefix_keyset_handle);
+  auto status_or_key_handle = keyset_manager->CreateNewKey(kKeyUri, prefix);
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
-  keyset_manager->PromoteToPrimary(key_handle);
+  CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));
   auto status_or_private_nonprefix_keyset_handle =
       KeysetUtil::MakeCopy(private_prefix_keyset_handle);
   CRUNCHY_EXPECT_OK(status_or_private_nonprefix_keyset_handle.status());
