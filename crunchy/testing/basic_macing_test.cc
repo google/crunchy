@@ -20,6 +20,7 @@
 #include "absl/memory/memory.h"
 #include "crunchy/crunchy_macer.h"
 #include "crunchy/internal/common/status_matchers.h"
+#include "crunchy/key_management/algorithms.h"
 #include "crunchy/key_management/crunchy_factory.h"
 #include "crunchy/key_management/keyset_handle.h"
 #include "crunchy/key_management/keyset_manager.h"
@@ -35,7 +36,7 @@ TEST(BasicMacingTest, SignVerify) {
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
 
   auto status_or_key_handle =
-      keyset_manager->GenerateAndAddNewKey("hmac-sha256-halfdigest");
+      keyset_manager->GenerateAndAddNewKey(GetHmacSha256HalfDigest());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));

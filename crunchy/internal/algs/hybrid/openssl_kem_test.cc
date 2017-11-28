@@ -24,7 +24,6 @@
 #include "crunchy/internal/algs/hybrid/x25519_kem.h"
 #include "crunchy/internal/algs/kdf/hkdf.h"
 #include "crunchy/internal/algs/random/crypto_rand.h"
-#include "crunchy/internal/common/flags.h"
 #include "crunchy/internal/common/init.h"
 #include "crunchy/internal/common/status_matchers.h"
 #include "crunchy/internal/common/string_buffer.h"

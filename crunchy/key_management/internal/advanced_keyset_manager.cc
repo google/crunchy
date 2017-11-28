@@ -31,7 +31,7 @@ namespace crunchy {
 
 namespace {
 
-StatusOr<const KeyRegistry*> DefaultKeyRegistryForKeyLabel(
+StatusOr<const KeyRegistry*> DefaultKeyRegistryForKeyType(
     const absl::string_view key_label) {
   if (GetAeadCryptingKeyRegistry().contains(key_label)) {
     return &GetAeadCryptingKeyRegistry();
@@ -55,29 +55,28 @@ AdvancedKeysetManager::KeyHandles() {
 }
 
 StatusOr<std::shared_ptr<KeyHandle>> AdvancedKeysetManager::CreateNewKey(
-    const absl::string_view key_label, const absl::string_view key_prefix) {
+    const KeyType& type, const absl::string_view key_prefix) {
   StatusOr<const KeyRegistry*> status_or_key_registry =
-      DefaultKeyRegistryForKeyLabel(key_label);
+      DefaultKeyRegistryForKeyType(type.crunchy_label());
   if (!status_or_key_registry.ok()) {
     return status_or_key_registry.status();
   }
   auto key_registry = status_or_key_registry.ValueOrDie();
-  return CreateNewKey(*key_registry, key_label, key_prefix);
+  return CreateNewKey(*key_registry, type, key_prefix);
 }
 
 StatusOr<std::shared_ptr<KeyHandle>> AdvancedKeysetManager::CreateNewKey(
-    const KeyRegistry& key_registry, const absl::string_view key_label,
+    const KeyRegistry& key_registry, const KeyType& type,
     const absl::string_view key_prefix) {
   Key key;
-  auto status_or_key_data = key_registry.CreateKeyData(key_label);
+  auto status_or_key_data = key_registry.CreateKeyData(type.crunchy_label());
   if (!status_or_key_data.ok()) {
     return status_or_key_data.status();
   }
   *key.mutable_data() = status_or_key_data.ValueOrDie();
   *key.mutable_metadata()->mutable_prefix() = std::string(key_prefix);
   key.mutable_metadata()->set_status(CURRENT);
-  key.mutable_metadata()->mutable_type()->set_google_key_type_label(
-      key_label.data(), key_label.size());
+  *key.mutable_metadata()->mutable_type() = type;
 
   auto key_handle = std::make_shared<KeyHandle>(std::make_shared<Key>(key));
   keyset_handle_->key_handles_.push_back(key_handle);

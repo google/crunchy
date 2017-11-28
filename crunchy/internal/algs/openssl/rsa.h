@@ -10,25 +10,30 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
 
-#ifndef CRUNCHY_INTERNAL_KEYSET_CRYPTER_FACTORY_H_
-#define CRUNCHY_INTERNAL_KEYSET_CRYPTER_FACTORY_H_
-
-#include <memory>
+#ifndef CRUNCHY_ALGS_OPENSSL_RSA_H_
+#define CRUNCHY_ALGS_OPENSSL_RSA_H_
 
 #include "absl/strings/string_view.h"
-#include "crunchy/crunchy_crypter.h"
-#include "crunchy/internal/keyset/aead_crypting_key_registry.h"
-#include "crunchy/key_management/internal/keyset.pb.h"
-#include "crunchy/key_management/keyset_handle.h"
+#include "crunchy/internal/algs/openssl/errors.h"
+#include "crunchy/internal/algs/openssl/openssl_unique_ptr.h"
+#include "crunchy/internal/common/string_buffer.h"
 #include "crunchy/util/status.h"
+#include <openssl/mem.h>
+#include <openssl/rsa.h>
 
 namespace crunchy {
 
-StatusOr<std::unique_ptr<CrunchyCrypter>> MakeCrunchyCrypter(
-    const AeadCryptingKeyRegistry& registry, const Keyset& keyset);
+StatusOr<std::string> SerializePrivateKey(const RSA* rsa);
+
+StatusOr<openssl_unique_ptr<RSA>> DeserializePrivateKey(
+    absl::string_view serialized_private_key);
+
+StatusOr<std::string> SerializePublicKey(const RSA* rsa);
+
+StatusOr<openssl_unique_ptr<RSA>> DeserializePublicKey(
+    absl::string_view serialized_public_key);
 
 }  // namespace crunchy
 
-#endif  // CRUNCHY_INTERNAL_KEYSET_CRYPTER_FACTORY_H_
+#endif  // CRUNCHY_ALGS_OPENSSL_RSA_H_

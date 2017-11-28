@@ -21,6 +21,7 @@
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
 #include "crunchy/internal/common/status_matchers.h"
+#include "crunchy/key_management/algorithms.h"
 #include "crunchy/key_management/internal/keyset.pb.h"
 #include "crunchy/key_management/keyset_enums.pb.h"
 #include "crunchy/util/status.h"
@@ -31,14 +32,18 @@ namespace {
 
 const char kDefaultPrefix[] = "keymasterciphertext";
 
-class AdvancedKeysetManagerTest : public ::testing::TestWithParam<std::string> {};
+class AdvancedKeysetManagerTest
+    : public ::testing::TestWithParam<const KeyType*> {
+ protected:
+  const KeyType& type() { return *GetParam(); }
+};
 
 TEST_P(AdvancedKeysetManagerTest, AddKeySuccess) {
   auto keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager =
       ::absl::make_unique<AdvancedKeysetManager>(keyset_handle);
 
-  CRUNCHY_EXPECT_OK(keyset_manager->CreateNewKey(GetParam(), kDefaultPrefix));
+  CRUNCHY_EXPECT_OK(keyset_manager->CreateNewKey(type(), kDefaultPrefix));
 
   const std::vector<std::shared_ptr<KeyHandle>>& key_handles =
       keyset_manager->KeyHandles();
@@ -49,11 +54,7 @@ TEST_P(AdvancedKeysetManagerTest, AddKeySuccess) {
   EXPECT_EQ(CURRENT, metadata.status());
   EXPECT_EQ(kDefaultPrefix, metadata.prefix());
 
-  KeyType key_type = metadata.type();
-  KeyType expected_key_type;
-  *expected_key_type.mutable_google_key_type_label() = GetParam();
-  EXPECT_THAT(expected_key_type.SerializeAsString(),
-              key_type.SerializeAsString());
+  EXPECT_THAT(type().SerializeAsString(), metadata.type().SerializeAsString());
 }
 
 TEST_P(AdvancedKeysetManagerTest, SetKeyStatusSuccess) {
@@ -61,7 +62,7 @@ TEST_P(AdvancedKeysetManagerTest, SetKeyStatusSuccess) {
   auto keyset_manager =
       ::absl::make_unique<AdvancedKeysetManager>(keyset_handle);
 
-  CRUNCHY_EXPECT_OK(keyset_manager->CreateNewKey(GetParam(), kDefaultPrefix));
+  CRUNCHY_EXPECT_OK(keyset_manager->CreateNewKey(type(), kDefaultPrefix));
 
   const std::vector<std::shared_ptr<KeyHandle>>& key_handles =
       keyset_manager->KeyHandles();
@@ -76,7 +77,7 @@ TEST_P(AdvancedKeysetManagerTest, SetKeyStatusUnknownStatusFailure) {
   auto keyset_manager =
       ::absl::make_unique<AdvancedKeysetManager>(keyset_handle);
 
-  CRUNCHY_EXPECT_OK(keyset_manager->CreateNewKey(GetParam(), kDefaultPrefix));
+  CRUNCHY_EXPECT_OK(keyset_manager->CreateNewKey(type(), kDefaultPrefix));
 
   const std::vector<std::shared_ptr<KeyHandle>>& key_handles =
       keyset_manager->KeyHandles();
@@ -91,7 +92,7 @@ TEST_P(AdvancedKeysetManagerTest, RemoveKeySuccess) {
   auto keyset_manager =
       ::absl::make_unique<AdvancedKeysetManager>(keyset_handle);
 
-  CRUNCHY_EXPECT_OK(keyset_manager->CreateNewKey(GetParam(), kDefaultPrefix));
+  CRUNCHY_EXPECT_OK(keyset_manager->CreateNewKey(type(), kDefaultPrefix));
 
   const std::vector<std::shared_ptr<KeyHandle>>& key_handles =
       keyset_manager->KeyHandles();
@@ -109,8 +110,8 @@ TEST_P(AdvancedKeysetManagerTest, RemoveKeyBadHandleFailure) {
   auto keyset_manager2 =
       ::absl::make_unique<AdvancedKeysetManager>(keyset_handle2);
 
-  CRUNCHY_EXPECT_OK(keyset_manager1->CreateNewKey(GetParam(), kDefaultPrefix));
-  CRUNCHY_EXPECT_OK(keyset_manager2->CreateNewKey(GetParam(), kDefaultPrefix));
+  CRUNCHY_EXPECT_OK(keyset_manager1->CreateNewKey(type(), kDefaultPrefix));
+  CRUNCHY_EXPECT_OK(keyset_manager2->CreateNewKey(type(), kDefaultPrefix));
 
   const std::vector<std::shared_ptr<KeyHandle>>& key_handles1 =
       keyset_manager1->KeyHandles();
@@ -130,7 +131,7 @@ TEST_P(AdvancedKeysetManagerTest, PromoteToPrimarySuccess) {
   auto keyset_manager =
       ::absl::make_unique<AdvancedKeysetManager>(keyset_handle);
 
-  CRUNCHY_EXPECT_OK(keyset_manager->CreateNewKey(GetParam(), kDefaultPrefix));
+  CRUNCHY_EXPECT_OK(keyset_manager->CreateNewKey(type(), kDefaultPrefix));
 
   const std::vector<std::shared_ptr<KeyHandle>>& key_handles =
       keyset_manager->KeyHandles();
@@ -147,13 +148,8 @@ TEST_P(AdvancedKeysetManagerTest, PromoteToPrimaryBadHandleFailure) {
   auto keyset_manager2 =
       ::absl::make_unique<AdvancedKeysetManager>(keyset_handle2);
 
-  KeyFormat key_format;
-  *key_format.mutable_key_type()->mutable_google_key_type_label() = GetParam();
-  key_format.set_ciphertext_format(V1_KEYMASTER_FORMAT);
-  key_format.set_prefix(kDefaultPrefix);
-
-  CRUNCHY_EXPECT_OK(keyset_manager1->CreateNewKey(GetParam(), kDefaultPrefix));
-  CRUNCHY_EXPECT_OK(keyset_manager2->CreateNewKey(GetParam(), kDefaultPrefix));
+  CRUNCHY_EXPECT_OK(keyset_manager1->CreateNewKey(type(), kDefaultPrefix));
+  CRUNCHY_EXPECT_OK(keyset_manager2->CreateNewKey(type(), kDefaultPrefix));
 
   const std::vector<std::shared_ptr<KeyHandle>>& key_handles1 =
       keyset_manager1->KeyHandles();
@@ -167,11 +163,10 @@ TEST_P(AdvancedKeysetManagerTest, PromoteToPrimaryBadHandleFailure) {
   EXPECT_EQ(NotFoundError("couldn't find KeyHandle"), promote_status);
 }
 
-INSTANTIATE_TEST_CASE_P(AllKeyTypesAdvancedKeysetManagerTest,
-                        AdvancedKeysetManagerTest,
-                        ::testing::Values("aes-128-gcm", "x25519-aes-256-gcm",
-                                          "hmac-sha256-halfdigest",
-                                          "p256-ecdsa"));
+INSTANTIATE_TEST_CASE_P(
+    AllKeyTypesAdvancedKeysetManagerTest, AdvancedKeysetManagerTest,
+    ::testing::Values(&GetAes128GcmKeyType(), &GetX25519Aes256GcmKeyType(),
+                      &GetHmacSha256HalfDigest(), &GetP256EcdsaKeyType()));
 
 }  // namespace
 

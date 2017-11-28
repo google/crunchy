@@ -32,12 +32,6 @@ StatusOr<std::unique_ptr<CrunchySigner>> MakeCrunchySigner(
 StatusOr<std::unique_ptr<CrunchyVerifier>> MakeCrunchyVerifier(
     const SigningKeyRegistry& registry, const Keyset& keyset);
 
-StatusOr<std::unique_ptr<CrunchySigner>> MakeCrunchySigner(
-    absl::string_view serialized_keyset);
-
-StatusOr<std::unique_ptr<CrunchyVerifier>> MakeCrunchyVerifier(
-    absl::string_view serialized_keyset);
-
 }  // namespace crunchy
 
 #endif  // CRUNCHY_INTERNAL_KEYSET_SIGNER_FACTORY_H_

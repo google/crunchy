@@ -16,16 +16,14 @@ syntax = "proto3";
 
 package crunchy;
 
-// The following KeyStatus is based on the KeyState definition in
-// //security/keymaster/remote/...
-//
 // A key's typical lifecycle is as follows:
 //   - CURRENT but not primary (key has been created but not yet put into
 //      service).
 //   - CURRENT and primary (key is the one currently used for
 //     signing/encryption operations).
-//   - RETIRED (key has been rotated out but remains trusted).
-//   - SCHEDULED_FOR_DELETION. - DELETED.
+//   - RETIRED (key has been rotated out but is used to decrypt/verify).
+//   - SCHEDULED_FOR_DELETION (key is no longer used).
+//   - DELETED (key is removed).
 enum KeyStatus {
   UNKNOWN_STATE = 0;
 

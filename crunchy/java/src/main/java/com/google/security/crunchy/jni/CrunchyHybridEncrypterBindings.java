@@ -66,7 +66,7 @@ public class CrunchyHybridEncrypterBindings implements CrunchyHybridEncrypter {
    *
    * @param nativePointer The value of the native pointer behind the jni.
    */
-  private static native void destroyCrunchyHybridEncrypterBindings(long nativePointer);
+  private native void destroyCrunchyHybridEncrypterBindings(long nativePointer);
 
   /**
    * Encrypts a payload.
@@ -76,6 +76,6 @@ public class CrunchyHybridEncrypterBindings implements CrunchyHybridEncrypter {
    * @return The encrypted plaintext.
    * @throws GeneralSecurityException If the underlying crypto library returns an error.
    */
-  private static native byte[] encrypt(long nativePointer, byte[] plaintext)
+  private native byte[] encrypt(long nativePointer, byte[] plaintext)
       throws GeneralSecurityException;
 }

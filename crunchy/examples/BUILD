@@ -24,6 +24,7 @@ cc_test(
     deps = [
         "//crunchy:crunchy_crypter",
         "//crunchy/internal/common:status_matchers",
+        "//crunchy/key_management:algorithms",
         "//crunchy/key_management:crunchy_factory",
         "//crunchy/key_management:key_handle",
         "//crunchy/key_management:keyset_handle",

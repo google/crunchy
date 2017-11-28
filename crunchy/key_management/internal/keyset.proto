@@ -23,29 +23,13 @@ import "crunchy/key_management/keyset_enums.proto";
 option java_outer_classname = "KeysetOuterClass";
 option java_multiple_files = true;
 
-enum CiphertextFormat {
-  UNKNOWN_CIPHERTEXT_FORMAT = 0;
-  V0_KEYMASTER_FORMAT = 1;
-  V1_KEYMASTER_FORMAT = 2;
-}
-
-// A KeyType specifies the exact key type (e.g., AES-GCM-128) that we’re
+// A KeyType specifies the exact key type (e.g. aes-128-gcm) that we’re
 // using.
 message KeyType {
-  oneof key_type_label {
+  oneof label {
     // A unique URI that identifies the keytype.
-    string google_key_type_label = 1;
+    string crunchy_label = 1;
   }
-}
-
-message KeyFormat {
-  KeyType key_type = 1;
-
-  CiphertextFormat ciphertext_format = 2;
-
-  // The prefix that can be used when generating ciphertexts with this
-  // CiphertextFormat.
-  bytes prefix = 3;
 }
 
 // KeyMetadata holds non-private (i.e., no key material) details about the
@@ -79,7 +63,7 @@ message Key {
   KeyData data = 2;
 }
 
-// Keymaster's internal representation of a keyset.
+// CrunchyCrypt's internal representation of a keyset.
 message Keyset {
   // The keys in our keyset.
   repeated Key key = 1;

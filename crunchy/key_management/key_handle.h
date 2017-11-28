@@ -18,35 +18,24 @@
 #include <memory>
 #include <utility>
 
-#include "crunchy/key_management/internal/keyset.pb.h"
 #include "crunchy/util/status.h"
 
 namespace crunchy {
+
+// Forward-declare AdvancedKeysetManager to avoid including an internal header.
+class Key;
+class KeyMetadata;
 
 // A KeyHandle is a view on top of a Key proto. This should be used as the
 // primary API to read/access Keys.
 class KeyHandle {
  public:
   explicit KeyHandle(std::shared_ptr<Key> key) : key_(std::move(key)) {}
-  virtual ~KeyHandle() = default;
+  ~KeyHandle() = default;
 
-  StatusOr<std::shared_ptr<KeyHandle>> CloneAsPublicOnly() {
-    auto cloned_key_handle = std::make_shared<Key>(*key_);
-    if (cloned_key_handle->mutable_data()->public_key().empty()) {
-      return FailedPreconditionError(
-          "Failed to Clone Key as public-only. Key does not contain public key "
-          "data.");
-    }
-    if (cloned_key_handle->mutable_data()->private_key().empty()) {
-      return FailedPreconditionError(
-          "Failed to Clone Key. Key does not contain private key data. Maybe "
-          "the keyset is already public-only?");
-    }
-    cloned_key_handle->mutable_data()->clear_private_key();
-    return std::make_shared<KeyHandle>(cloned_key_handle);
-  }
+  StatusOr<std::shared_ptr<KeyHandle>> CloneAsPublicOnly() const;
 
-  virtual const KeyMetadata& metadata() const { return key_->metadata(); }
+  const KeyMetadata& metadata() const;
 
  private:
   std::shared_ptr<Key> key_;

@@ -89,7 +89,7 @@ public class CrunchyCrypterBindings implements CrunchyCrypter {
    *
    * @param nativePointer The value of the native pointer behind the jni.
    */
-  private static native void destroyCrunchyCrypterBindings(long nativePointer);
+  private native void destroyCrunchyCrypterBindings(long nativePointer);
 
   /**
    * Encrypts a payload.
@@ -99,7 +99,7 @@ public class CrunchyCrypterBindings implements CrunchyCrypter {
    * @return The encrypted plaintext.
    * @throws GeneralSecurityException If the underlying crypto library returns an error.
    */
-  private static native byte[] encrypt(long nativePointer, byte[] plaintext)
+  private native byte[] encrypt(long nativePointer, byte[] plaintext)
       throws GeneralSecurityException;
 
   /**
@@ -112,7 +112,7 @@ public class CrunchyCrypterBindings implements CrunchyCrypter {
    *     identifier in the ciphertext cannot be found, or if the underlying crypto library returns
    *     an error.
    */
-  private static native byte[] decrypt(long nativePointer, byte[] ciphertext)
+  private native byte[] decrypt(long nativePointer, byte[] ciphertext)
       throws GeneralSecurityException;
 
   /**
@@ -125,7 +125,7 @@ public class CrunchyCrypterBindings implements CrunchyCrypter {
    * @throws GeneralSecurityException If the underlying crypto library returns an error or aad is
    *     used but not supported.
    */
-  private static native byte[] encrypt(long nativePointer, byte[] plaintext, byte[] aad)
+  private native byte[] encrypt(long nativePointer, byte[] plaintext, byte[] aad)
       throws GeneralSecurityException;
 
   /**
@@ -139,6 +139,6 @@ public class CrunchyCrypterBindings implements CrunchyCrypter {
    *     identifier in the ciphertext cannot be found, if aad is used but not supported, or if the
    *     underlying crypto library returns an error.
    */
-  private static native byte[] decrypt(long nativePointer, byte[] ciphertext, byte[] aad)
+  private native byte[] decrypt(long nativePointer, byte[] ciphertext, byte[] aad)
       throws GeneralSecurityException;
 }

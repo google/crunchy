@@ -20,6 +20,7 @@
 #include "absl/memory/memory.h"
 #include "crunchy/crunchy_signer.h"
 #include "crunchy/internal/common/status_matchers.h"
+#include "crunchy/key_management/algorithms.h"
 #include "crunchy/key_management/crunchy_factory.h"
 #include "crunchy/key_management/keyset_handle.h"
 #include "crunchy/key_management/keyset_manager.h"
@@ -36,7 +37,7 @@ TEST(BasicSigningTest, SignVerify) {
       ::absl::make_unique<KeysetManager>(private_keyset_handle);
 
   auto status_or_key_handle =
-      keyset_manager->GenerateAndAddNewKey("p256-ecdsa");
+      keyset_manager->GenerateAndAddNewKey(GetP256EcdsaKeyType());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));

@@ -21,17 +21,19 @@
 
 namespace crunchy {
 
-// A class which implements the AES-GCM AEAD scheme in the CrypterInterface.
-// This supports 128 and 256-bit AES keys. The NewInstance factory method can
-// be used to create new instances of the class. Each instance has an associated
-// key that cannot be modified later. The nonce and tag lengths are also fixed
-// when creating an instance. Valid nonce lengths are greater than
-// kNonceLengthThreshold, and valid tag lengths are greater than
-// kTagLengthThreshold.
-
+// AES-GCM using a 96-bit random nonce, 128-bit tag, and either AES-128 or
+// AES-256.
+// http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf
 const CrypterFactory& GetAes128GcmFactory();
 const CrypterFactory& GetAes256GcmFactory();
+
+// ChaCha Poly1305 with a 96-bit random nonce, 128-bit tag, and 256-bit key.
+// https://tools.ietf.org/html/rfc7539
 const CrypterFactory& GetChaCha20Poly1305Factory();
+
+// AES-GCM-SIV using a 96-bit random nonce, 128-bit tag, and either AES-128 or
+// AES-256.
+// https://tools.ietf.org/html/draft-irtf-cfrg-gcmsiv-06
 const CrypterFactory& GetAes128GcmSivFactory();
 const CrypterFactory& GetAes256GcmSivFactory();
 

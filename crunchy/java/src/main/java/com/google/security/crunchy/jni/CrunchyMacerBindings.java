@@ -74,7 +74,7 @@ public class CrunchyMacerBindings implements CrunchyMacer {
    *
    * @param nativePointer The value of the native pointer behind the jni.
    */
-  private static native void destroyCrunchyMacerBindings(long nativePointer);
+  private native void destroyCrunchyMacerBindings(long nativePointer);
 
   /**
    * Signs a message.
@@ -84,8 +84,7 @@ public class CrunchyMacerBindings implements CrunchyMacer {
    * @return The signature of the message.
    * @throws GeneralSecurityException If the underlying crypto library returns an error.
    */
-  public static native byte[] sign(long nativePointer, byte[] message)
-      throws GeneralSecurityException;
+  public native byte[] sign(long nativePointer, byte[] message) throws GeneralSecurityException;
 
   /**
    * Verifies a message.
@@ -96,6 +95,6 @@ public class CrunchyMacerBindings implements CrunchyMacer {
    * @throws GeneralSecurityException If the signature is invalid or if the underlying crypto
    *     library returns an error.
    */
-  public static native void verify(long nativePointer, byte[] message, byte[] signature)
+  public native void verify(long nativePointer, byte[] message, byte[] signature)
       throws GeneralSecurityException;
 }

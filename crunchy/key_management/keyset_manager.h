@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "crunchy/key_management/internal/advanced_keyset_manager.h"
 #include "crunchy/key_management/key_handle.h"
 #include "crunchy/key_management/keyset_enums.pb.h"
 #include "crunchy/key_management/keyset_handle.h"
@@ -27,21 +26,26 @@
 
 namespace crunchy {
 
+// Forward-declare to avoid including internal headers.
+class AdvancedKeysetManager;
+class KeyType;
+
 // The user-facing API for keyset management.
 // Each method directly modifies the underlying keyset.
 class KeysetManager {
  public:
   explicit KeysetManager(std::shared_ptr<KeysetHandle> keyset_handle);
+  ~KeysetManager();
 
   // Return a vector of all KeysetHandles in this Keyset.
-  const std::vector<std::shared_ptr<KeyHandle>>& KeyHandles();
+  const std::vector<std::shared_ptr<KeyHandle>>& KeyHandles() const;
 
   // Return the keyset's primary key.
   std::shared_ptr<KeyHandle> PrimaryKey();
 
   // Create a new key in the keyset.
   StatusOr<std::shared_ptr<KeyHandle>> GenerateAndAddNewKey(
-      absl::string_view type_name);
+      const KeyType& type);
 
   // Increment the primary_key_id to the next key in the keyset.
   StatusOr<std::shared_ptr<KeyHandle>> PromoteNextToPrimary();

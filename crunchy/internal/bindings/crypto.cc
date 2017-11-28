@@ -25,11 +25,8 @@
 #include "crunchy/crunchy_hybrid_crypter.h"
 #include "crunchy/crunchy_macer.h"
 #include "crunchy/crunchy_signer.h"
-#include "crunchy/internal/keyset/crypter_factory.h"
-#include "crunchy/internal/keyset/hybrid_crypter_factory.h"
-#include "crunchy/internal/keyset/macer_factory.h"
-#include "crunchy/internal/keyset/signer_factory.h"
 #include "crunchy/internal/pure_c/crypto.h"
+#include "crunchy/key_management/crunchy_factory.h"
 #include "crunchy/util/status.h"
 
 namespace crunchy {

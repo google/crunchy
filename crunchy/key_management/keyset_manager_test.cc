@@ -24,6 +24,8 @@
 #include "crunchy/internal/common/status_matchers.h"
 #include "crunchy/internal/keys/key_util.h"
 #include "crunchy/internal/port/port.h"
+#include "crunchy/key_management/algorithms.h"
+#include "crunchy/key_management/internal/advanced_keyset_manager.h"
 #include "crunchy/key_management/internal/keyset.pb.h"
 #include "crunchy/util/status.h"
 
@@ -31,19 +33,23 @@ namespace crunchy {
 
 namespace {
 
-class KeysetManagerTest : public ::testing::TestWithParam<std::string> {};
+class KeysetManagerTest : public ::testing::TestWithParam<const KeyType*> {
+ protected:
+  const KeyType& type() { return *GetParam(); }
+};
 
 TEST_P(KeysetManagerTest, GenerateAndAddNewKeyAsPrimary) {
   auto keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
 
-  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));
 
   EXPECT_EQ(1, keyset_manager->KeyHandles().size());
-  EXPECT_EQ(GetParam(), key_handle->metadata().type().google_key_type_label());
+  EXPECT_EQ(type().crunchy_label(),
+            key_handle->metadata().type().crunchy_label());
   EXPECT_EQ(key_handle, keyset_manager->PrimaryKey());
 }
 
@@ -51,7 +57,7 @@ TEST_P(KeysetManagerTest, GenerateOneAndPromoteNextToPrimary) {
   auto keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
 
-  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = keyset_manager->PromoteNextToPrimary().ValueOrDie();
 
@@ -63,11 +69,11 @@ TEST_P(KeysetManagerTest, GenerateTwoAndPromoteNextToPrimary) {
   auto keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
 
-  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));
-  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   key_handle = status_or_key_handle.ValueOrDie();
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   CRUNCHY_EXPECT_OK(keyset_manager->PromoteNextToPrimary());
@@ -88,7 +94,7 @@ TEST_P(KeysetManagerTest, NewestKeyAlreadyPrimaryPromoteNextToPrimaryError) {
   auto keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
 
-  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   CRUNCHY_EXPECT_OK(keyset_manager->PromoteNextToPrimary());
 
@@ -101,7 +107,7 @@ TEST_P(KeysetManagerTest, GarbageCollectKeysSuccess) {
   auto keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
 
-  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   KeyMetadata* key_metadata = KeyUtil::GetKeyMetadata(key_handle);
@@ -115,11 +121,11 @@ TEST_P(KeysetManagerTest, GarbageCollectKeysWithMultipleSuccess) {
   auto keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
 
-  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle_to_keep = status_or_key_handle.ValueOrDie();
 
-  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle_to_delete = status_or_key_handle.ValueOrDie();
   KeyMetadata* key_metadata = KeyUtil::GetKeyMetadata(key_handle_to_delete);
@@ -141,7 +147,7 @@ TEST_P(KeysetManagerTest, GarbageCollectKeysPrimaryKeyError) {
   auto keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
 
-  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));
@@ -164,11 +170,11 @@ TEST_P(KeysetManagerTest, DeleteOldestKeySuccess) {
   auto keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
 
-  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle_to_delete = status_or_key_handle.ValueOrDie();
 
-  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle_to_keep = status_or_key_handle.ValueOrDie();
 
@@ -194,7 +200,7 @@ TEST_P(KeysetManagerTest, DeleteOldestKeyOldestKeyIsPrimaryError) {
   auto keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
 
-  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));
@@ -209,8 +215,7 @@ TEST_P(KeysetManagerTest, GenerateAndAddNewKeyIncrementalTwoBytePrefix) {
 
   const int kNumKeys = 100;
   for (uint16_t i = 0; i < kNumKeys; ++i) {
-    auto status_or_key_handle =
-        keyset_manager->GenerateAndAddNewKey(GetParam());
+    auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
     CRUNCHY_EXPECT_OK(status_or_key_handle.status());
     auto key_handle = status_or_key_handle.ValueOrDie();
     const uint16_t generated_prefix =
@@ -226,8 +231,7 @@ TEST_P(KeysetManagerTest,
 
   const int kNumKeys = 100;
   for (uint16_t i = 0; i < kNumKeys; ++i) {
-    auto status_or_key_handle =
-        keyset_manager->GenerateAndAddNewKey(GetParam());
+    auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
     CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   }
 
@@ -241,7 +245,7 @@ TEST_P(KeysetManagerTest,
   CRUNCHY_EXPECT_OK(keyset_manager->GarbageCollectKeys());
 
   // Ensure deleted key has index kNumKeys.
-  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   const uint16_t generated_prefix =
@@ -256,12 +260,12 @@ TEST_P(KeysetManagerTest, GenerateAndAddNewKeyIncrementalTwoBytePrefixFromOne) {
   auto advanced_keyset_manager =
       ::absl::make_unique<AdvancedKeysetManager>(keyset_handle);
   auto status_or_key_handle =
-      advanced_keyset_manager->CreateNewKey(GetParam(), std::string("\x00\x01", 2));
+      advanced_keyset_manager->CreateNewKey(type(), std::string("\x00\x01", 2));
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
 
   // Expect the next key to be "\x00\x02"
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
-  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   const std::string expected_prefix = std::string("\x00\x02", 2);
@@ -275,12 +279,12 @@ TEST_P(KeysetManagerTest, GenerateAndAddNewKeyIncrementalTwoBytePrefixFromMax) {
   auto advanced_keyset_manager =
       ::absl::make_unique<AdvancedKeysetManager>(keyset_handle);
   auto status_or_key_handle =
-      advanced_keyset_manager->CreateNewKey(GetParam(), "\xFF\xFF");
+      advanced_keyset_manager->CreateNewKey(type(), "\xFF\xFF");
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
 
   // Expect the next key to be "\x00\x00"
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
-  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   const std::string expected_prefix = std::string("\x00\x00", 2);
@@ -296,15 +300,15 @@ TEST_P(KeysetManagerTest,
   auto advanced_keyset_manager =
       ::absl::make_unique<AdvancedKeysetManager>(keyset_handle);
   auto status_or_key_handle =
-      advanced_keyset_manager->CreateNewKey(GetParam(), std::string("\x00\x00", 2));
+      advanced_keyset_manager->CreateNewKey(type(), std::string("\x00\x00", 2));
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
-  status_or_key_handle = advanced_keyset_manager->CreateNewKey(
-      GetParam(), std::string("\x00\x01xy", 4));
+  status_or_key_handle =
+      advanced_keyset_manager->CreateNewKey(type(), std::string("\x00\x01xy", 4));
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
 
   // Expect the next key to be "\x00\x02"
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
-  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   const std::string expected_prefix = std::string("\x00\x02", 2);
@@ -320,15 +324,14 @@ TEST_P(KeysetManagerTest,
   auto advanced_keyset_manager =
       ::absl::make_unique<AdvancedKeysetManager>(keyset_handle);
   auto status_or_key_handle =
-      advanced_keyset_manager->CreateNewKey(GetParam(), std::string("\x00\xFF", 2));
+      advanced_keyset_manager->CreateNewKey(type(), std::string("\x00\xFF", 2));
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
-  status_or_key_handle =
-      advanced_keyset_manager->CreateNewKey(GetParam(), "\x01");
+  status_or_key_handle = advanced_keyset_manager->CreateNewKey(type(), "\x01");
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
 
   // Expect the next key to be "\x01\x01"
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
-  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(GetParam());
+  status_or_key_handle = keyset_manager->GenerateAndAddNewKey(type());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   const std::string expected_prefix = std::string("\x02\x00", 2);
@@ -336,9 +339,10 @@ TEST_P(KeysetManagerTest,
 }
 
 INSTANTIATE_TEST_CASE_P(CrypterKeysetManagerTest, KeysetManagerTest,
-                        ::testing::Values("aes-128-gcm", "x25519-aes-256-gcm",
-                                          "hmac-sha256-halfdigest",
-                                          "p256-ecdsa"));
+                        ::testing::Values(&GetAes128GcmKeyType(),
+                                          &GetX25519Aes256GcmKeyType(),
+                                          &GetHmacSha256HalfDigest(),
+                                          &GetP256EcdsaKeyType()));
 
 }  // namespace
 

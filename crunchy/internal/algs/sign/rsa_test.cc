@@ -24,7 +24,6 @@
 #include "crunchy/internal/algs/sign/signer_interface.h"
 #include "crunchy/internal/algs/sign/signer_test.h"
 #include "crunchy/internal/algs/sign/testdata/sign_test_vectors.pb.h"
-#include "crunchy/internal/common/flags.h"
 #include "crunchy/internal/common/init.h"
 #include "crunchy/internal/common/status_matchers.h"
 #include "crunchy/internal/common/test_factory.h"
@@ -37,11 +36,11 @@ namespace {
 
 std::vector<FactoryInfo<SignerFactory>>* FactoryInfoVector() {
   static const SignerFactory& rsa4096PkcsFactory =
-      *MakeRsaFactory(ModulusBitLength::B4096, PaddingAlgorithm::PKCS1,
+      *MakeRsaFactory(SignModulusBitLength::B4096, PaddingAlgorithm::PKCS1,
                       RSA_F4 /* 2^16+1 */, Sha256::Instance())
            .release();
   static const SignerFactory& rsa4096PssFactory =
-      *MakeRsaFactory(ModulusBitLength::B4096, PaddingAlgorithm::PSS,
+      *MakeRsaFactory(SignModulusBitLength::B4096, PaddingAlgorithm::PSS,
                       RSA_F4 /* 2^16+1 */, Sha256::Instance())
            .release();
   auto factories = new std::vector<FactoryInfo<SignerFactory>>();

@@ -42,7 +42,7 @@ using pool_unique_ptr = std::unique_ptr<T, std::function<void(T*)>>;
 //   absl::make_unique<std::string>(seed_value_); }
 // };
 // The deleter passed in the Pool constructor will be used to delete *all* T
-// instances provduced by the Clone() method.
+// instances produced by the Clone() method.
 //
 // StringPool::get() can be called concurrently as:
 // pool_unique_ptr<std::string> ptr = pool.get();

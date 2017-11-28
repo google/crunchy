@@ -17,10 +17,12 @@
 #include <openssl/rand.h>
 #include <string.h>
 
+#include "crunchy/internal/port/logging.h"
+
 namespace crunchy {
 
 void RandBytes(void* out, size_t len) {
-  RAND_bytes(reinterpret_cast<uint8_t*>(out), len);
+  CRUNCHY_CHECK_EQ(RAND_bytes(reinterpret_cast<uint8_t*>(out), len), 1);
 }
 
 uint8_t Rand8() {

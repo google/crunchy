@@ -41,11 +41,11 @@ class AdvancedKeysetManager {
   // Generate a new key using the default registry for key_label and the
   // specified key_prefix.
   StatusOr<std::shared_ptr<KeyHandle>> CreateNewKey(
-      const absl::string_view key_label, const absl::string_view key_prefix);
+      const KeyType& type, const absl::string_view key_prefix);
 
   // Generate a new key using the specified registry and key_prefix.
   StatusOr<std::shared_ptr<KeyHandle>> CreateNewKey(
-      const KeyRegistry& key_registry, const absl::string_view key_label,
+      const KeyRegistry& key_registry, const KeyType& type,
       const absl::string_view key_prefix);
 
   // Add the key in key_handle to the keyset.

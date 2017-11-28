@@ -33,7 +33,6 @@ cc_library(
     hdrs = ["test_factory.h"],
     deps = [
         ":file",
-        ":flags",
         ":init",
         "//crunchy/internal/algs/random:crypto_rand",
         "//crunchy/internal/port",
@@ -64,17 +63,9 @@ cc_library(
     ],
 )
 
-# Shims into google-internal libraries that are not currently open sourced
-
-# Going into absl
-cc_library(
-    name = "flags",
-    hdrs = ["flags.h"],
-)
-
-# Not sure, but we can strip it from the release.
 cc_library(
     name = "init",
+    testonly = 1,
     hdrs = ["init.h"],
 )
 

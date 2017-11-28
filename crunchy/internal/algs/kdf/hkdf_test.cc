@@ -37,7 +37,6 @@ struct HKDFTest {
 
 // Test cases taken from
 // https://tools.ietf.org/html/rfc5869#appendix-A.
-// All data are stored as hex strings.
 static const HKDFTest kHKDF256TestHex[] = {
     // for sha-256
     {

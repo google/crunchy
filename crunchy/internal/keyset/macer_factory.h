@@ -29,9 +29,6 @@ namespace crunchy {
 StatusOr<std::unique_ptr<CrunchyMacer>> MakeCrunchyMacer(
     const MacingKeyRegistry& registry, const Keyset& keyset);
 
-StatusOr<std::unique_ptr<CrunchyMacer>> MakeCrunchyMacer(
-    absl::string_view serialized_keyset);
-
 }  // namespace crunchy
 
 #endif  // CRUNCHY_INTERNAL_KEYSET_MACER_FACTORY_H_

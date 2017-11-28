@@ -60,62 +60,6 @@ class RsaPrivatePool : public Pool<RSA> {
   RSA* Clone() override { return RSAPrivateKey_dup(GetSeedValue()); }
 };
 
-StatusOr<std::string> SerializePrivateKey(const RSA* rsa) {
-  uint8_t* serialized_private_key = nullptr;
-  size_t serialized_private_key_length;
-  if (RSA_private_key_to_bytes(&serialized_private_key,
-                               &serialized_private_key_length, rsa) != 1) {
-    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
-           << "Openssl internal error serializing private key: "
-           << GetOpensslErrors();
-  }
-  std::string result(reinterpret_cast<char*>(serialized_private_key),
-                serialized_private_key_length);
-  OPENSSL_free(serialized_private_key);
-  return result;
-}
-
-StatusOr<openssl_unique_ptr<RSA>> DeserializePrivateKey(
-    absl::string_view serialized_private_key) {
-  openssl_unique_ptr<RSA> rsa(RSA_private_key_from_bytes(
-      reinterpret_cast<const uint8_t*>(serialized_private_key.data()),
-      serialized_private_key.size()));
-  if (rsa == nullptr) {
-    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
-           << "Openssl internal error parsing private key: "
-           << GetOpensslErrors();
-  }
-  return std::move(rsa);
-}
-
-StatusOr<std::string> SerializePublicKey(const RSA* rsa) {
-  uint8_t* serialized_public_key = nullptr;
-  size_t serialized_public_key_length;
-  if (RSA_public_key_to_bytes(&serialized_public_key,
-                              &serialized_public_key_length, rsa) != 1) {
-    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
-           << "Openssl internal error serializing public key: "
-           << GetOpensslErrors();
-  }
-  std::string result(reinterpret_cast<char*>(serialized_public_key),
-                serialized_public_key_length);
-  OPENSSL_free(serialized_public_key);
-  return result;
-}
-
-StatusOr<openssl_unique_ptr<RSA>> DeserializePublicKey(
-    absl::string_view serialized_public_key) {
-  openssl_unique_ptr<RSA> rsa(RSA_public_key_from_bytes(
-      reinterpret_cast<const uint8_t*>(serialized_public_key.data()),
-      serialized_public_key.size()));
-  if (rsa == nullptr) {
-    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
-           << "Openssl internal error parsing public key: "
-           << GetOpensslErrors();
-  }
-  return std::move(rsa);
-}
-
 StatusOr<std::string> HashInput(PaddingAlgorithm alg, const Hasher& hash,
                            absl::string_view input, const BIGNUM* n) {
   switch (alg) {
@@ -266,7 +210,7 @@ class RsaVerifier : public VerifierInterface {
 
 class RsaFactory : public SignerFactory {
  public:
-  RsaFactory(ModulusBitLength modulus_length, PaddingAlgorithm alg, int e,
+  RsaFactory(SignModulusBitLength modulus_length, PaddingAlgorithm alg, int e,
              bool hash_input, const Hasher& hash)
       : hash_input_(hash_input),
         hash_(hash),
@@ -332,15 +276,15 @@ class RsaFactory : public SignerFactory {
 
 }  // namespace
 
-std::unique_ptr<SignerFactory> MakeRsaFactory(ModulusBitLength modulus_length,
-                                              PaddingAlgorithm alg, int e,
-                                              const Hasher& hash) {
+std::unique_ptr<SignerFactory> MakeRsaFactory(
+    SignModulusBitLength modulus_length, PaddingAlgorithm alg, int e,
+    const Hasher& hash) {
   return absl::make_unique<RsaFactory>(modulus_length, alg, e,
                                        /* hash_input= */ true, hash);
 }
 
 std::unique_ptr<SignerFactory> MakeRsaFactoryWithHashedInput(
-    ModulusBitLength modulus_length, PaddingAlgorithm alg, int e,
+    SignModulusBitLength modulus_length, PaddingAlgorithm alg, int e,
     const Hasher& hash) {
   return absl::make_unique<RsaFactory>(modulus_length, alg, e,
                                        /* hash_input= */ false, hash);
@@ -348,7 +292,7 @@ std::unique_ptr<SignerFactory> MakeRsaFactoryWithHashedInput(
 
 const SignerFactory& GetRsa2048PkcsFactory() {
   static const SignerFactory& factory =
-      *MakeRsaFactory(ModulusBitLength::B2048, PaddingAlgorithm::PKCS1,
+      *MakeRsaFactory(SignModulusBitLength::B2048, PaddingAlgorithm::PKCS1,
                       RSA_F4 /* 2^16+1 */, Sha256::Instance())
            .release();
   return factory;
@@ -356,7 +300,7 @@ const SignerFactory& GetRsa2048PkcsFactory() {
 
 const SignerFactory& GetRsa2048PssFactory() {
   static const SignerFactory& factory =
-      *MakeRsaFactory(ModulusBitLength::B2048, PaddingAlgorithm::PSS,
+      *MakeRsaFactory(SignModulusBitLength::B2048, PaddingAlgorithm::PSS,
                       RSA_F4 /* 2^16+1 */, Sha256::Instance())
            .release();
   return factory;

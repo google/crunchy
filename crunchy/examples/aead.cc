@@ -21,6 +21,7 @@
 #include "absl/memory/memory.h"
 #include "crunchy/crunchy_crypter.h"
 #include "crunchy/internal/common/status_matchers.h"
+#include "crunchy/key_management/algorithms.h"
 #include "crunchy/key_management/crunchy_factory.h"
 #include "crunchy/key_management/key_handle.h"
 #include "crunchy/key_management/keyset_handle.h"
@@ -40,7 +41,7 @@ Status Aes128GcmEncryptionExample() {
 
   // Add a key to keyset, keeping a reference to the new key.
   StatusOr<std::shared_ptr<KeyHandle>> status_or_key_handle =
-      keyset_manager->GenerateAndAddNewKey("aes-128-gcm");
+      keyset_manager->GenerateAndAddNewKey(GetAes128GcmKeyType());
   if (!status_or_key_handle.ok()) {
     return status_or_key_handle.status();
   }

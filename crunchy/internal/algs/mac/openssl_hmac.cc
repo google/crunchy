@@ -34,9 +34,13 @@ namespace {
 const EVP_MD* kEvpMd = EVP_sha256();
 const size_t kDigestLength = 32;
 
-bool SecureEquals(const char* left, const char* right, size_t length) {
+bool SecureEquals(const char* left, size_t left_length, const char* right,
+                  size_t right_length) {
+  if (left_length != right_length) {
+    return false;
+  }
   char result = 0x00;
-  for (size_t i = 0; i < length; i++) {
+  for (size_t i = 0; i < left_length; i++) {
     result |= left[i] ^ right[i];
   }
   return result == 0x00;
@@ -127,7 +131,8 @@ Status HmacSha256::Verify(absl::string_view input,
   }
   std::string mac = std::move(status_or_mac.ValueOrDie());
 
-  if (!SecureEquals(mac.data(), signature.data(), GetSignatureLength())) {
+  if (!SecureEquals(mac.data(), GetSignatureLength(), signature.data(),
+                    signature.length())) {
     return InvalidArgumentErrorBuilder(CRUNCHY_LOC).VLog(2)
            << "Mac did not verify";
   }

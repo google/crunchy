@@ -21,7 +21,6 @@
 #include <gtest/gtest.h>
 #include "crunchy/internal/algs/mac/openssl_hmac.h"
 #include "crunchy/internal/algs/random/crypto_rand.h"
-#include "crunchy/internal/common/flags.h"
 #include "crunchy/internal/common/init.h"
 #include "crunchy/internal/common/status_matchers.h"
 #include "crunchy/internal/common/test_factory.h"

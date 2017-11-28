@@ -29,6 +29,7 @@
 #include "crunchy/internal/keys/key_util.h"
 #include "crunchy/internal/keyset/keyset_util.h"
 #include "crunchy/internal/keyset/testdata/factory_test_vectors.pb.h"
+#include "crunchy/key_management/algorithms.h"
 #include "crunchy/key_management/crunchy_factory.h"
 #include "crunchy/key_management/internal/advanced_keyset_manager.h"
 #include "crunchy/key_management/key_handle.h"
@@ -39,12 +40,11 @@ namespace crunchy {
 
 namespace {
 
-const char kKeyUri[] = "hmac-sha256-halfdigest";
-
 std::shared_ptr<KeysetHandle> GetDefaultKeysetHandle() {
   auto keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
-  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(kKeyUri);
+  auto status_or_key_handle =
+      keyset_manager->GenerateAndAddNewKey(GetHmacSha256HalfDigest());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));
@@ -62,7 +62,8 @@ TEST(KeysetFactoryTest, BadKeyset) {
   {
     auto keyset_handle = std::make_shared<KeysetHandle>();
     auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
-    CRUNCHY_EXPECT_OK(keyset_manager->GenerateAndAddNewKey(kKeyUri));
+    CRUNCHY_EXPECT_OK(
+        keyset_manager->GenerateAndAddNewKey(GetHmacSha256HalfDigest()));
     ASSERT_FALSE(MakeCrunchyMacer(keyset_handle).ok());
   }
 }

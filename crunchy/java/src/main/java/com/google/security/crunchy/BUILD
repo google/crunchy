@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Open-source Keymaster
+# CrunchyCrypt - Safe and Simple Cryptography
+#
+# CrunchyCrypt is an opensource library offering safe and easy-to-use cryptography
+# APIs with a built-in key-versioning protocol.
 
 package(
     default_visibility = ["//crunchy/java:internal_pkg"],

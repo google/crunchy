@@ -62,6 +62,7 @@ cc_test(
         ":advanced_keyset_manager",
         ":keyset_proto_cc",
         "//crunchy/internal/common:status_matchers",
+        "//crunchy/key_management:algorithms",
         "//crunchy/key_management:keyset_enums_proto_cc",
         "//crunchy/util:status",
         "@com_google_absl//absl/memory",

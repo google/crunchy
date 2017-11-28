@@ -26,7 +26,7 @@ namespace {
 std::shared_ptr<KeyHandle> GetDefaultKeyHandle(const std::string& public_key_data,
                                                const std::string& private_key_data) {
   Key key;
-  *key.mutable_metadata()->mutable_type()->mutable_google_key_type_label() =
+  *key.mutable_metadata()->mutable_type()->mutable_crunchy_label() =
       "some_key_type";
   key.mutable_metadata()->set_status(CURRENT);
   *key.mutable_metadata()->mutable_prefix() = "the_keys_prefix";

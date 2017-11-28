@@ -75,3 +75,17 @@ cc_test(
         "@com_google_googletest//:gtest_main",
     ],
 )
+
+cc_library(
+    name = "rsa",
+    srcs = ["rsa.cc"],
+    hdrs = ["rsa.h"],
+    deps = [
+        "//crunchy/internal/algs/openssl:errors",
+        "//crunchy/internal/algs/openssl:openssl_unique_ptr",
+        "//crunchy/internal/common:string_buffer",
+        "//crunchy/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
+    ],
+)

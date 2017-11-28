@@ -24,7 +24,6 @@
 #include "crunchy/internal/algs/crypt/crypter_interface.h"
 #include "crunchy/internal/algs/crypt/crypter_test.h"
 #include "crunchy/internal/algs/crypt/testdata/crypter_test_vectors.pb.h"
-#include "crunchy/internal/common/flags.h"
 #include "crunchy/internal/common/init.h"
 #include "crunchy/internal/common/status_matchers.h"
 #include "crunchy/internal/common/test_factory.h"

@@ -67,7 +67,7 @@ public class CrunchyVerifierBindings implements CrunchyVerifier {
    *
    * @param nativePointer The value of the native pointer behind the jni.
    */
-  private static native void destroyCrunchyVerifierBindings(long nativePointer);
+  private native void destroyCrunchyVerifierBindings(long nativePointer);
 
   /**
    * Verifies a message.
@@ -78,6 +78,6 @@ public class CrunchyVerifierBindings implements CrunchyVerifier {
    * @throws GeneralSecurityException If the signature is invalid or if the underlying crypto
    *     library returns an error.
    */
-  public static native void verify(long nativePointer, byte[] message, byte[] signature)
+  public native void verify(long nativePointer, byte[] message, byte[] signature)
       throws GeneralSecurityException;
 }

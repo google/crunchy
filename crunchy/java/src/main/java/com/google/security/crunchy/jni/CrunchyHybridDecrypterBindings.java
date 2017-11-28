@@ -66,7 +66,7 @@ public class CrunchyHybridDecrypterBindings implements CrunchyHybridDecrypter {
    *
    * @param nativePointer The value of the native pointer behind the jni.
    */
-  private static native void destroyCrunchyHybridDecrypterBindings(long nativePointer);
+  private native void destroyCrunchyHybridDecrypterBindings(long nativePointer);
 
   /**
    * Decrypts a payload.
@@ -78,6 +78,6 @@ public class CrunchyHybridDecrypterBindings implements CrunchyHybridDecrypter {
    *     identifier in the ciphertext cannot be found, or if the underlying crypto library returns
    *     an error.
    */
-  private static native byte[] decrypt(long nativePointer, byte[] ciphertext)
+  private native byte[] decrypt(long nativePointer, byte[] ciphertext)
       throws GeneralSecurityException;
 }

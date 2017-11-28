@@ -36,10 +36,34 @@ StatusOr<std::unique_ptr<CrunchyCrypter>> MakeCrunchyCrypter(
   return MakeCrunchyCrypter(registry, keyset);
 }
 
+StatusOr<std::unique_ptr<CrunchyCrypter>> MakeCrunchyCrypter(
+    absl::string_view serialized_keyset) {
+  const AeadCryptingKeyRegistry& registry = GetAeadCryptingKeyRegistry();
+  Keyset keyset;
+  if (!keyset.ParseFromArray(serialized_keyset.data(),
+                             serialized_keyset.size())) {
+    return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Couldn't parse keyset";
+  }
+  return MakeCrunchyCrypter(registry, keyset);
+}
+
 StatusOr<std::unique_ptr<CrunchyHybridEncrypter>> MakeCrunchyHybridEncrypter(
     const std::shared_ptr<KeysetHandle>& keyset_handle) {
   const HybridCryptingKeyRegistry& registry = GetHybridCryptingKeyRegistry();
   Keyset keyset = KeysetUtil::KeysetHandleAsProto(keyset_handle);
+  return MakeCrunchyHybridEncrypter(registry, keyset);
+}
+
+StatusOr<std::unique_ptr<CrunchyHybridEncrypter>> MakeCrunchyHybridEncrypter(
+    absl::string_view serialized_keyset) {
+  const HybridCryptingKeyRegistry& registry = GetHybridCryptingKeyRegistry();
+  Keyset keyset;
+  if (!keyset.ParseFromArray(serialized_keyset.data(),
+                             serialized_keyset.size())) {
+    return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Couldn't parse keyset";
+  }
   return MakeCrunchyHybridEncrypter(registry, keyset);
 }
 
@@ -50,10 +74,34 @@ StatusOr<std::unique_ptr<CrunchyHybridDecrypter>> MakeCrunchyHybridDecrypter(
   return MakeCrunchyHybridDecrypter(registry, keyset);
 }
 
+StatusOr<std::unique_ptr<CrunchyHybridDecrypter>> MakeCrunchyHybridDecrypter(
+    absl::string_view serialized_keyset) {
+  const HybridCryptingKeyRegistry& registry = GetHybridCryptingKeyRegistry();
+  Keyset keyset;
+  if (!keyset.ParseFromArray(serialized_keyset.data(),
+                             serialized_keyset.size())) {
+    return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Couldn't parse keyset";
+  }
+  return MakeCrunchyHybridDecrypter(registry, keyset);
+}
+
 StatusOr<std::unique_ptr<CrunchyMacer>> MakeCrunchyMacer(
         const std::shared_ptr<KeysetHandle>& keyset_handle) {
   const MacingKeyRegistry& registry = GetMacingKeyRegistry();
   const Keyset keyset = KeysetUtil::KeysetHandleAsProto(keyset_handle);
+  return MakeCrunchyMacer(registry, keyset);
+}
+
+StatusOr<std::unique_ptr<CrunchyMacer>> MakeCrunchyMacer(
+    absl::string_view serialized_keyset) {
+  const MacingKeyRegistry& registry = GetMacingKeyRegistry();
+  Keyset keyset;
+  if (!keyset.ParseFromArray(serialized_keyset.data(),
+                             serialized_keyset.size())) {
+    return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Couldn't parse keyset";
+  }
   return MakeCrunchyMacer(registry, keyset);
 }
 
@@ -64,10 +112,34 @@ StatusOr<std::unique_ptr<CrunchySigner>> MakeCrunchySigner(
   return MakeCrunchySigner(registry, keyset);
 }
 
+StatusOr<std::unique_ptr<CrunchySigner>> MakeCrunchySigner(
+    absl::string_view serialized_keyset) {
+  const SigningKeyRegistry& registry = GetSigningKeyRegistry();
+  Keyset keyset;
+  if (!keyset.ParseFromArray(serialized_keyset.data(),
+                             serialized_keyset.size())) {
+    return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Couldn't parse keyset";
+  }
+  return MakeCrunchySigner(registry, keyset);
+}
+
 StatusOr<std::unique_ptr<CrunchyVerifier>> MakeCrunchyVerifier(
     const std::shared_ptr<KeysetHandle>& keyset_handle) {
   const SigningKeyRegistry& registry = GetSigningKeyRegistry();
   Keyset keyset = KeysetUtil::KeysetHandleAsProto(keyset_handle);
+  return MakeCrunchyVerifier(registry, keyset);
+}
+
+StatusOr<std::unique_ptr<CrunchyVerifier>> MakeCrunchyVerifier(
+    absl::string_view serialized_keyset) {
+  const SigningKeyRegistry& registry = GetSigningKeyRegistry();
+  Keyset keyset;
+  if (!keyset.ParseFromArray(serialized_keyset.data(),
+                             serialized_keyset.size())) {
+    return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Couldn't parse keyset";
+  }
   return MakeCrunchyVerifier(registry, keyset);
 }
 

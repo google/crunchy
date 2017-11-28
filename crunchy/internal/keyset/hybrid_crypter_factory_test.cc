@@ -29,6 +29,7 @@
 #include "crunchy/internal/keys/key_util.h"
 #include "crunchy/internal/keyset/keyset_util.h"
 #include "crunchy/internal/keyset/testdata/factory_test_vectors.pb.h"
+#include "crunchy/key_management/algorithms.h"
 #include "crunchy/key_management/crunchy_factory.h"
 #include "crunchy/key_management/internal/advanced_keyset_manager.h"
 #include "crunchy/key_management/keyset_handle.h"
@@ -38,12 +39,11 @@ namespace crunchy {
 
 namespace {
 
-const char kKeyUri[] = "x25519-aes-256-gcm";
-
 std::shared_ptr<KeysetHandle> GetDefaultKeysetHandle() {
   auto keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
-  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(kKeyUri);
+  auto status_or_key_handle =
+      keyset_manager->GenerateAndAddNewKey(GetX25519Aes256GcmKeyType());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));
@@ -63,7 +63,8 @@ TEST(KeysetFactoryTest, BadKeyset) {
     auto private_keyset_handle = std::make_shared<KeysetHandle>();
     auto keyset_manager =
         ::absl::make_unique<KeysetManager>(private_keyset_handle);
-    CRUNCHY_EXPECT_OK(keyset_manager->GenerateAndAddNewKey(kKeyUri));
+    CRUNCHY_EXPECT_OK(
+        keyset_manager->GenerateAndAddNewKey(GetX25519Aes256GcmKeyType()));
     auto status_or_public_keyset_handle =
         private_keyset_handle->CloneAsPublicOnly();
     CRUNCHY_EXPECT_OK(status_or_public_keyset_handle.status());
@@ -271,7 +272,8 @@ TEST(KeysetFactoryTest, Prefix) {
   auto private_prefix_keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager =
       ::absl::make_unique<AdvancedKeysetManager>(private_prefix_keyset_handle);
-  auto status_or_key_handle = keyset_manager->CreateNewKey(kKeyUri, prefix);
+  auto status_or_key_handle =
+      keyset_manager->CreateNewKey(GetX25519Aes256GcmKeyType(), prefix);
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));

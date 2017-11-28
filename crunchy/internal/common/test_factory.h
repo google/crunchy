@@ -27,7 +27,6 @@
 #include "absl/strings/string_view.h"
 #include "crunchy/internal/algs/random/crypto_rand.h"
 #include "crunchy/internal/common/file.h"
-#include "crunchy/internal/common/flags.h"
 #include "crunchy/internal/common/init.h"
 #include "crunchy/internal/port/port.h"
 

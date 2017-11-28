@@ -23,7 +23,6 @@
 #include "absl/strings/escaping.h"
 #include "crunchy/internal/algs/hybrid/testdata/hybrid_test_vectors.pb.h"
 #include "crunchy/internal/algs/random/crypto_rand.h"
-#include "crunchy/internal/common/flags.h"
 #include "crunchy/internal/common/init.h"
 #include "crunchy/internal/common/status_matchers.h"
 #include "crunchy/internal/common/test_factory.h"

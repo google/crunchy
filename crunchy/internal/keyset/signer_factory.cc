@@ -98,7 +98,7 @@ StatusOr<std::unique_ptr<CrunchySigner>> MakeCrunchySigner(
   }
   const Key& key = keyset.key(keyset.primary_key_id());
   auto status_or_key = registry.MakeSigningKey(
-      key.metadata().type().google_key_type_label(), key.data());
+      key.metadata().type().crunchy_label(), key.data());
   if (!status_or_key.ok()) {
     return status_or_key.status();
   }
@@ -116,7 +116,7 @@ StatusOr<std::unique_ptr<CrunchyVerifier>> MakeCrunchyVerifier(
   std::vector<std::string> prefices;
   for (const Key& key : keyset.key()) {
     auto status_or_key = registry.MakeVerifyingKey(
-        key.metadata().type().google_key_type_label(), key.data());
+        key.metadata().type().crunchy_label(), key.data());
     if (!status_or_key.ok()) {
       return status_or_key.status();
     }
@@ -126,30 +126,6 @@ StatusOr<std::unique_ptr<CrunchyVerifier>> MakeCrunchyVerifier(
 
   return {
       absl::make_unique<VerifierImpl>(std::move(keys), std::move(prefices))};
-}
-
-StatusOr<std::unique_ptr<CrunchySigner>> MakeCrunchySigner(
-    absl::string_view serialized_keyset) {
-  const SigningKeyRegistry& registry = GetSigningKeyRegistry();
-  Keyset keyset;
-  if (!keyset.ParseFromArray(serialized_keyset.data(),
-                             serialized_keyset.size())) {
-    return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
-           << "Couldn't parse keyset";
-  }
-  return MakeCrunchySigner(registry, keyset);
-}
-
-StatusOr<std::unique_ptr<CrunchyVerifier>> MakeCrunchyVerifier(
-    absl::string_view serialized_keyset) {
-  const SigningKeyRegistry& registry = GetSigningKeyRegistry();
-  Keyset keyset;
-  if (!keyset.ParseFromArray(serialized_keyset.data(),
-                             serialized_keyset.size())) {
-    return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
-           << "Couldn't parse keyset";
-  }
-  return MakeCrunchyVerifier(registry, keyset);
 }
 
 }  // namespace crunchy

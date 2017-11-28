@@ -26,26 +26,41 @@
 
 namespace crunchy {
 
-// Symmetric Encryption
 StatusOr<std::unique_ptr<CrunchyCrypter>> MakeCrunchyCrypter(
     const std::shared_ptr<KeysetHandle>& keyset_handle);
 
-// Hybrid Encryption
+StatusOr<std::unique_ptr<CrunchyCrypter>> MakeCrunchyCrypter(
+    absl::string_view serialized_keyset);
+
 StatusOr<std::unique_ptr<CrunchyHybridEncrypter>> MakeCrunchyHybridEncrypter(
     const std::shared_ptr<KeysetHandle>& keyset_handle);
+
+StatusOr<std::unique_ptr<CrunchyHybridEncrypter>> MakeCrunchyHybridEncrypter(
+    absl::string_view serialized_keyset);
 
 StatusOr<std::unique_ptr<CrunchyHybridDecrypter>> MakeCrunchyHybridDecrypter(
     const std::shared_ptr<KeysetHandle>& keyset_handle);
 
+StatusOr<std::unique_ptr<CrunchyHybridDecrypter>> MakeCrunchyHybridDecrypter(
+    absl::string_view serialized_keyset);
+
 StatusOr<std::unique_ptr<CrunchyMacer>> MakeCrunchyMacer(
         const std::shared_ptr<KeysetHandle>& keyset_handle);
+
+StatusOr<std::unique_ptr<CrunchyMacer>> MakeCrunchyMacer(
+    absl::string_view serialized_keyset);
 
 StatusOr<std::unique_ptr<CrunchySigner>> MakeCrunchySigner(
         const std::shared_ptr<KeysetHandle>& keyset_handle);
 
+StatusOr<std::unique_ptr<CrunchySigner>> MakeCrunchySigner(
+    absl::string_view serialized_keyset);
+
 StatusOr<std::unique_ptr<CrunchyVerifier>> MakeCrunchyVerifier(
         const std::shared_ptr<KeysetHandle>& keyset_handle);
 
+StatusOr<std::unique_ptr<CrunchyVerifier>> MakeCrunchyVerifier(
+    absl::string_view serialized_keyset);
 
 }  // namespace crunchy
 

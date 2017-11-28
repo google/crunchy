@@ -20,6 +20,7 @@
 #include "absl/memory/memory.h"
 #include "crunchy/crunchy_hybrid_crypter.h"
 #include "crunchy/internal/common/status_matchers.h"
+#include "crunchy/key_management/algorithms.h"
 #include "crunchy/key_management/crunchy_factory.h"
 #include "crunchy/key_management/keyset_handle.h"
 #include "crunchy/key_management/keyset_manager.h"
@@ -36,7 +37,7 @@ TEST(BasicHybridTest, EncryptDecrypt) {
       ::absl::make_unique<KeysetManager>(private_keyset_handle);
 
   auto status_or_key_handle =
-      keyset_manager->GenerateAndAddNewKey("x25519-aes-256-gcm");
+      keyset_manager->GenerateAndAddNewKey(GetX25519Aes256GcmKeyType());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));

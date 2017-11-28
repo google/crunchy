@@ -29,6 +29,7 @@
 #include "crunchy/internal/keys/key_util.h"
 #include "crunchy/internal/keyset/keyset_util.h"
 #include "crunchy/internal/keyset/testdata/factory_test_vectors.pb.h"
+#include "crunchy/key_management/algorithms.h"
 #include "crunchy/key_management/crunchy_factory.h"
 #include "crunchy/key_management/internal/advanced_keyset_manager.h"
 #include "crunchy/key_management/key_handle.h"
@@ -38,12 +39,11 @@ namespace crunchy {
 
 namespace {
 
-const char kKeyUri[] = "aes-128-gcm";
-
 std::shared_ptr<KeysetHandle> GetDefaultKeysetHandle() {
   auto keyset_handle = std::make_shared<KeysetHandle>();
   auto keyset_manager = ::absl::make_unique<KeysetManager>(keyset_handle);
-  auto status_or_key_handle = keyset_manager->GenerateAndAddNewKey(kKeyUri);
+  auto status_or_key_handle =
+      keyset_manager->GenerateAndAddNewKey(GetAes128GcmKeyType());
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto key_handle = status_or_key_handle.ValueOrDie();
   CRUNCHY_EXPECT_OK(keyset_manager->PromoteToPrimary(key_handle));
@@ -223,8 +223,8 @@ TEST(KeysetFactoryTest, Prefix) {
   auto prefix_keyset_handle = std::make_shared<KeysetHandle>();
   auto prefix_keyset_manager =
       ::absl::make_unique<AdvancedKeysetManager>(prefix_keyset_handle);
-  auto status_or_key_handle =
-      prefix_keyset_manager->CreateNewKey(kKeyUri, RandString(prefix_length));
+  auto status_or_key_handle = prefix_keyset_manager->CreateNewKey(
+      GetAes128GcmKeyType(), RandString(prefix_length));
   CRUNCHY_EXPECT_OK(status_or_key_handle.status());
   auto prefix_key_handle = status_or_key_handle.ValueOrDie();
   CRUNCHY_EXPECT_OK(prefix_keyset_manager->PromoteToPrimary(prefix_key_handle));

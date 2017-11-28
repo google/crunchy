@@ -27,9 +27,8 @@ crunchy_proto_library(
 
 cc_library(
     name = "key_handle",
-    hdrs = [
-        "key_handle.h",
-    ],
+    srcs = ["key_handle.cc"],
+    hdrs = ["key_handle.h"],
     deps = [
         "//crunchy/key_management/internal:keyset_proto_cc",
         "//crunchy/util:status",
@@ -47,7 +46,6 @@ cc_library(
     deps = [
         ":key_handle",
         "//crunchy/internal/keys:key_util",
-        "//crunchy/key_management/internal:keyset_proto_cc",
         "//crunchy/util:status",
         "@com_google_absl//absl/memory",
     ],
@@ -81,12 +79,14 @@ cc_test(
         "keyset_manager_test.cc",
     ],
     deps = [
+        ":algorithms",
         ":keyset_manager",
         "//crunchy:crunchy_crypter",
         "//crunchy/internal/algs/random:crypto_rand",
         "//crunchy/internal/common:status_matchers",
         "//crunchy/internal/keys:key_util",
         "//crunchy/internal/port",
+        "//crunchy/key_management/internal:advanced_keyset_manager",
         "//crunchy/key_management/internal:keyset_proto_cc",
         "//crunchy/util:status",
         "@com_google_absl//absl/memory",
@@ -117,6 +117,7 @@ cc_test(
         "keyset_serialization_test.cc",
     ],
     deps = [
+        ":algorithms",
         ":keyset_manager",
         ":keyset_serialization",
         "//crunchy/internal/common:status_matchers",
@@ -153,5 +154,16 @@ cc_library(
         "//crunchy/internal/keyset:signing_key_registry",
         "//crunchy/key_management/internal:keyset_proto_cc",
         "//crunchy/util:status",
+    ],
+)
+
+cc_library(
+    name = "algorithms",
+    srcs = ["algorithms.cc"],
+    hdrs = ["algorithms.h"],
+    deps = [
+        "//crunchy/key_management/internal:keyset_proto_cc",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
     ],
 )

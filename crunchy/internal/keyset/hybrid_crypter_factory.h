@@ -32,12 +32,6 @@ StatusOr<std::unique_ptr<CrunchyHybridEncrypter>> MakeCrunchyHybridEncrypter(
 StatusOr<std::unique_ptr<CrunchyHybridDecrypter>> MakeCrunchyHybridDecrypter(
     const HybridCryptingKeyRegistry& registry, const Keyset& keyset);
 
-StatusOr<std::unique_ptr<CrunchyHybridEncrypter>> MakeCrunchyHybridEncrypter(
-    absl::string_view serialized_keyset);
-
-StatusOr<std::unique_ptr<CrunchyHybridDecrypter>> MakeCrunchyHybridDecrypter(
-    absl::string_view serialized_keyset);
-
 }  // namespace crunchy
 
 #endif  // CRUNCHY_INTERNAL_KEYSET_HYBRID_CRYPTER_FACTORY_H_

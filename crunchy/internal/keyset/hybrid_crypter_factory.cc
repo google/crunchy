@@ -99,7 +99,7 @@ StatusOr<std::unique_ptr<CrunchyHybridEncrypter>> MakeCrunchyHybridEncrypter(
   }
   const Key& key = keyset.key(keyset.primary_key_id());
   auto status_or_key = registry.MakeHybridEncryptingKey(
-      key.metadata().type().google_key_type_label(), key.data());
+      key.metadata().type().crunchy_label(), key.data());
   if (!status_or_key.ok()) {
     return status_or_key.status();
   }
@@ -117,7 +117,7 @@ StatusOr<std::unique_ptr<CrunchyHybridDecrypter>> MakeCrunchyHybridDecrypter(
   std::vector<std::string> prefices;
   for (const Key& key : keyset.key()) {
     auto status_or_key = registry.MakeHybridDecryptingKey(
-        key.metadata().type().google_key_type_label(), key.data());
+        key.metadata().type().crunchy_label(), key.data());
     if (!status_or_key.ok()) {
       return status_or_key.status();
     }
@@ -127,30 +127,6 @@ StatusOr<std::unique_ptr<CrunchyHybridDecrypter>> MakeCrunchyHybridDecrypter(
 
   return {absl::make_unique<HybridDecrypterImpl>(std::move(keys),
                                                  std::move(prefices))};
-}
-
-StatusOr<std::unique_ptr<CrunchyHybridEncrypter>> MakeCrunchyHybridEncrypter(
-    absl::string_view serialized_keyset) {
-  const HybridCryptingKeyRegistry& registry = GetHybridCryptingKeyRegistry();
-  Keyset keyset;
-  if (!keyset.ParseFromArray(serialized_keyset.data(),
-                             serialized_keyset.size())) {
-    return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
-           << "Couldn't parse keyset";
-  }
-  return MakeCrunchyHybridEncrypter(registry, keyset);
-}
-
-StatusOr<std::unique_ptr<CrunchyHybridDecrypter>> MakeCrunchyHybridDecrypter(
-    absl::string_view serialized_keyset) {
-  const HybridCryptingKeyRegistry& registry = GetHybridCryptingKeyRegistry();
-  Keyset keyset;
-  if (!keyset.ParseFromArray(serialized_keyset.data(),
-                             serialized_keyset.size())) {
-    return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
-           << "Couldn't parse keyset";
-  }
-  return MakeCrunchyHybridDecrypter(registry, keyset);
 }
 
 }  // namespace crunchy

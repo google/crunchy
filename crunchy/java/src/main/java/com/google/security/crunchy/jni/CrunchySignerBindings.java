@@ -66,7 +66,7 @@ public class CrunchySignerBindings implements CrunchySigner {
    *
    * @param nativePointer The value of the native pointer behind the jni.
    */
-  private static native void destroyCrunchySignerBindings(long nativePointer);
+  private native void destroyCrunchySignerBindings(long nativePointer);
 
   /**
    * Signs a message.
@@ -76,6 +76,5 @@ public class CrunchySignerBindings implements CrunchySigner {
    * @return The signature of the message.
    * @throws GeneralSecurityException If the underlying crypto library returns an error.
    */
-  public static native byte[] sign(long nativePointer, byte[] message)
-      throws GeneralSecurityException;
+  public native byte[] sign(long nativePointer, byte[] message) throws GeneralSecurityException;
 }

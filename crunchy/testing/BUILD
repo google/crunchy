@@ -24,6 +24,7 @@ cc_test(
     deps = [
         "//crunchy:crunchy_crypter",
         "//crunchy/internal/common:status_matchers",
+        "//crunchy/key_management:algorithms",
         "//crunchy/key_management:crunchy_factory",
         "//crunchy/key_management:keyset_handle",
         "//crunchy/key_management:keyset_manager",
@@ -41,6 +42,7 @@ cc_test(
     deps = [
         "//crunchy:crunchy_hybrid_crypter",
         "//crunchy/internal/common:status_matchers",
+        "//crunchy/key_management:algorithms",
         "//crunchy/key_management:crunchy_factory",
         "//crunchy/key_management:keyset_handle",
         "//crunchy/key_management:keyset_manager",
@@ -58,6 +60,7 @@ cc_test(
     deps = [
         "//crunchy:crunchy_macer",
         "//crunchy/internal/common:status_matchers",
+        "//crunchy/key_management:algorithms",
         "//crunchy/key_management:crunchy_factory",
         "//crunchy/key_management:keyset_handle",
         "//crunchy/key_management:keyset_manager",
@@ -75,6 +78,7 @@ cc_test(
     deps = [
         "//crunchy:crunchy_signer",
         "//crunchy/internal/common:status_matchers",
+        "//crunchy/key_management:algorithms",
         "//crunchy/key_management:crunchy_factory",
         "//crunchy/key_management:keyset_handle",
         "//crunchy/key_management:keyset_manager",

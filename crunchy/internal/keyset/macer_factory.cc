@@ -87,8 +87,8 @@ StatusOr<std::unique_ptr<CrunchyMacer>> MakeCrunchyMacer(
   std::vector<std::unique_ptr<MacingKey>> keys;
   std::vector<std::string> prefices;
   for (const Key& key : keyset.key()) {
-    auto status_or_key = registry.MakeKey(
-        key.metadata().type().google_key_type_label(), key.data());
+    auto status_or_key =
+        registry.MakeKey(key.metadata().type().crunchy_label(), key.data());
     if (!status_or_key.ok()) {
       return status_or_key.status();
     }
@@ -109,18 +109,6 @@ StatusOr<std::unique_ptr<CrunchyMacer>> MakeCrunchyMacer(
 
   return {absl::make_unique<MacerImpl>(std::move(keys), std::move(prefices),
                                        primary_key, primary_prefix)};
-}
-
-StatusOr<std::unique_ptr<CrunchyMacer>> MakeCrunchyMacer(
-    absl::string_view serialized_keyset) {
-  const MacingKeyRegistry& registry = GetMacingKeyRegistry();
-  Keyset keyset;
-  if (!keyset.ParseFromArray(serialized_keyset.data(),
-                             serialized_keyset.size())) {
-    return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
-           << "Couldn't parse keyset";
-  }
-  return MakeCrunchyMacer(registry, keyset);
 }
 
 }  // namespace crunchy

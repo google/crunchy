@@ -95,8 +95,8 @@ StatusOr<std::unique_ptr<CrunchyCrypter>> MakeCrunchyCrypter(
   std::vector<std::unique_ptr<AeadCryptingKey>> keys;
   std::vector<std::string> prefices;
   for (const Key& key : keyset.key()) {
-    auto status_or_key = registry.MakeKey(
-        key.metadata().type().google_key_type_label(), key.data());
+    auto status_or_key =
+        registry.MakeKey(key.metadata().type().crunchy_label(), key.data());
     if (!status_or_key.ok()) {
       return status_or_key.status();
     }
@@ -117,18 +117,6 @@ StatusOr<std::unique_ptr<CrunchyCrypter>> MakeCrunchyCrypter(
 
   return {absl::make_unique<CrypterImpl>(std::move(keys), std::move(prefices),
                                          primary_key, primary_prefix)};
-}
-
-StatusOr<std::unique_ptr<CrunchyCrypter>> MakeCrunchyCrypter(
-    absl::string_view serialized_keyset) {
-  const AeadCryptingKeyRegistry& registry = GetAeadCryptingKeyRegistry();
-  Keyset keyset;
-  if (!keyset.ParseFromArray(serialized_keyset.data(),
-                             serialized_keyset.size())) {
-    return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
-           << "Couldn't parse keyset";
-  }
-  return MakeCrunchyCrypter(registry, keyset);
 }
 
 }  // namespace crunchy

@@ -72,7 +72,7 @@ Java_com_google_security_crunchy_jni_CrunchyCrypterBindings_createCrunchyCrypter
  */
 JNIEXPORT void JNICALL
 Java_com_google_security_crunchy_jni_CrunchyCrypterBindings_destroyCrunchyCrypterBindings(
-    JNIEnv *env, jclass clazz, jlong native_pointer) {
+    JNIEnv *env, jobject obj, jlong native_pointer) {
   ccr_crypter *crypter = (ccr_crypter *)(intptr_t)native_pointer;
   ccr_crypter_free(crypter);
 }
@@ -84,7 +84,7 @@ Java_com_google_security_crunchy_jni_CrunchyCrypterBindings_destroyCrunchyCrypte
  */
 JNIEXPORT jbyteArray JNICALL
 Java_com_google_security_crunchy_jni_CrunchyCrypterBindings_encrypt__J_3B(
-    JNIEnv *env, jclass clazz, jlong native_pointer, jbyteArray plaintext) {
+    JNIEnv *env, jobject obj, jlong native_pointer, jbyteArray plaintext) {
   ccr_crypter *crypter = (ccr_crypter *)(intptr_t)native_pointer;
 
   ccr_error error;
@@ -126,7 +126,7 @@ Java_com_google_security_crunchy_jni_CrunchyCrypterBindings_encrypt__J_3B(
  */
 JNIEXPORT jbyteArray JNICALL
 Java_com_google_security_crunchy_jni_CrunchyCrypterBindings_decrypt__J_3B(
-    JNIEnv *env, jclass clazz, jlong native_pointer, jbyteArray ciphertext) {
+    JNIEnv *env, jobject obj, jlong native_pointer, jbyteArray ciphertext) {
   ccr_crypter *crypter = (ccr_crypter *)(intptr_t)native_pointer;
 
   ccr_error error;
@@ -169,7 +169,7 @@ Java_com_google_security_crunchy_jni_CrunchyCrypterBindings_decrypt__J_3B(
  */
 JNIEXPORT jbyteArray JNICALL
 Java_com_google_security_crunchy_jni_CrunchyCrypterBindings_encrypt__J_3B_3B(
-    JNIEnv *env, jclass clazz, jlong native_pointer, jbyteArray plaintext,
+    JNIEnv *env, jobject obj, jlong native_pointer, jbyteArray plaintext,
     jbyteArray aad) {
   ccr_crypter *crypter = (ccr_crypter *)(intptr_t)native_pointer;
 
@@ -216,7 +216,7 @@ Java_com_google_security_crunchy_jni_CrunchyCrypterBindings_encrypt__J_3B_3B(
  */
 JNIEXPORT jbyteArray JNICALL
 Java_com_google_security_crunchy_jni_CrunchyCrypterBindings_decrypt__J_3B_3B(
-    JNIEnv *env, jclass clazz, jlong native_pointer, jbyteArray ciphertext,
+    JNIEnv *env, jobject obj, jlong native_pointer, jbyteArray ciphertext,
     jbyteArray aad) {
   ccr_crypter *crypter = (ccr_crypter *)(intptr_t)native_pointer;
 
@@ -290,7 +290,7 @@ Java_com_google_security_crunchy_jni_CrunchyHybridDecrypterBindings_createCrunch
  */
 JNIEXPORT void JNICALL
 Java_com_google_security_crunchy_jni_CrunchyHybridDecrypterBindings_destroyCrunchyHybridDecrypterBindings(
-    JNIEnv *env, jclass clazz, jlong native_pointer) {
+    JNIEnv *env, jobject obj, jlong native_pointer) {
   ccr_hybrid_decrypter *hybrid_decrypter =
       (ccr_hybrid_decrypter *)(intptr_t)native_pointer;
   ccr_hybrid_decrypter_free(hybrid_decrypter);
@@ -303,7 +303,7 @@ Java_com_google_security_crunchy_jni_CrunchyHybridDecrypterBindings_destroyCrunc
  */
 JNIEXPORT jbyteArray JNICALL
 Java_com_google_security_crunchy_jni_CrunchyHybridDecrypterBindings_decrypt(
-    JNIEnv *env, jclass clazz, jlong native_pointer, jbyteArray ciphertext) {
+    JNIEnv *env, jobject obj, jlong native_pointer, jbyteArray ciphertext) {
   ccr_hybrid_decrypter *hybrid_decrypter =
       (ccr_hybrid_decrypter *)(intptr_t)native_pointer;
 
@@ -371,7 +371,7 @@ Java_com_google_security_crunchy_jni_CrunchyHybridEncrypterBindings_createCrunch
  */
 JNIEXPORT void JNICALL
 Java_com_google_security_crunchy_jni_CrunchyHybridEncrypterBindings_destroyCrunchyHybridEncrypterBindings(
-    JNIEnv *env, jclass clazz, jlong native_pointer) {
+    JNIEnv *env, jobject obj, jlong native_pointer) {
   ccr_hybrid_encrypter *hybrid_encrypter =
       (ccr_hybrid_encrypter *)(intptr_t)native_pointer;
   ccr_hybrid_encrypter_free(hybrid_encrypter);
@@ -384,7 +384,7 @@ Java_com_google_security_crunchy_jni_CrunchyHybridEncrypterBindings_destroyCrunc
  */
 JNIEXPORT jbyteArray JNICALL
 Java_com_google_security_crunchy_jni_CrunchyHybridEncrypterBindings_encrypt(
-    JNIEnv *env, jclass clazz, jlong native_pointer, jbyteArray plaintext) {
+    JNIEnv *env, jobject obj, jlong native_pointer, jbyteArray plaintext) {
   ccr_hybrid_encrypter *hybrid_encrypter =
       (ccr_hybrid_encrypter *)(intptr_t)native_pointer;
 
@@ -450,7 +450,7 @@ Java_com_google_security_crunchy_jni_CrunchyMacerBindings_createCrunchyMacerBind
  */
 JNIEXPORT void JNICALL
 Java_com_google_security_crunchy_jni_CrunchyMacerBindings_destroyCrunchyMacerBindings(
-    JNIEnv *env, jclass clazz, jlong native_pointer) {
+    JNIEnv *env, jobject obj, jlong native_pointer) {
   ccr_macer *macer = (ccr_macer *)(intptr_t)native_pointer;
   ccr_macer_free(macer);
 }
@@ -462,7 +462,7 @@ Java_com_google_security_crunchy_jni_CrunchyMacerBindings_destroyCrunchyMacerBin
  */
 JNIEXPORT jbyteArray JNICALL
 Java_com_google_security_crunchy_jni_CrunchyMacerBindings_sign(
-    JNIEnv *env, jclass clazz, jlong native_pointer, jbyteArray message) {
+    JNIEnv *env, jobject obj, jlong native_pointer, jbyteArray message) {
   ccr_macer *macer = (ccr_macer *)(intptr_t)native_pointer;
 
   ccr_error error;
@@ -502,7 +502,7 @@ Java_com_google_security_crunchy_jni_CrunchyMacerBindings_sign(
  */
 JNIEXPORT void JNICALL
 Java_com_google_security_crunchy_jni_CrunchyMacerBindings_verify(
-    JNIEnv *env, jclass clazz, jlong native_pointer, jbyteArray message,
+    JNIEnv *env, jobject obj, jlong native_pointer, jbyteArray message,
     jbyteArray signature) {
   ccr_macer *macer = (ccr_macer *)(intptr_t)native_pointer;
 
@@ -558,7 +558,7 @@ Java_com_google_security_crunchy_jni_CrunchySignerBindings_createCrunchySignerBi
  */
 JNIEXPORT void JNICALL
 Java_com_google_security_crunchy_jni_CrunchySignerBindings_destroyCrunchySignerBindings(
-    JNIEnv *env, jclass clazz, jlong native_pointer) {
+    JNIEnv *env, jobject obj, jlong native_pointer) {
   ccr_signer *signer = (ccr_signer *)(intptr_t)native_pointer;
   ccr_signer_free(signer);
 }
@@ -570,7 +570,7 @@ Java_com_google_security_crunchy_jni_CrunchySignerBindings_destroyCrunchySignerB
  */
 JNIEXPORT jbyteArray JNICALL
 Java_com_google_security_crunchy_jni_CrunchySignerBindings_sign(
-    JNIEnv *env, jclass clazz, jlong native_pointer, jbyteArray message) {
+    JNIEnv *env, jobject obj, jlong native_pointer, jbyteArray message) {
   ccr_signer *signer = (ccr_signer *)(intptr_t)native_pointer;
 
   ccr_error error;
@@ -635,7 +635,7 @@ Java_com_google_security_crunchy_jni_CrunchyVerifierBindings_createCrunchyVerifi
  */
 JNIEXPORT void JNICALL
 Java_com_google_security_crunchy_jni_CrunchyVerifierBindings_destroyCrunchyVerifierBindings(
-    JNIEnv *env, jclass clazz, jlong native_pointer) {
+    JNIEnv *env, jobject obj, jlong native_pointer) {
   ccr_verifier *verifier = (ccr_verifier *)(intptr_t)native_pointer;
   ccr_verifier_free(verifier);
 }
@@ -647,7 +647,7 @@ Java_com_google_security_crunchy_jni_CrunchyVerifierBindings_destroyCrunchyVerif
  */
 JNIEXPORT void JNICALL
 Java_com_google_security_crunchy_jni_CrunchyVerifierBindings_verify(
-    JNIEnv *env, jclass clazz, jlong native_pointer, jbyteArray message,
+    JNIEnv *env, jobject obj, jlong native_pointer, jbyteArray message,
     jbyteArray signature) {
   ccr_verifier *verifier = (ccr_verifier *)(intptr_t)native_pointer;
 

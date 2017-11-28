@@ -27,7 +27,6 @@
 #include "crunchy/internal/algs/sign/signer_interface.h"
 #include "crunchy/internal/algs/sign/testdata/sign_test_vectors.pb.h"
 #include "crunchy/internal/common/file.h"
-#include "crunchy/internal/common/flags.h"
 #include "crunchy/internal/common/status_matchers.h"
 #include "crunchy/internal/common/test_factory.h"
 #include "crunchy/util/status.h"

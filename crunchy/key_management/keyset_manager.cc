@@ -24,6 +24,7 @@
 #include "absl/strings/str_cat.h"
 #include "crunchy/internal/algs/random/crypto_rand.h"
 #include "crunchy/internal/port/port.h"
+#include "crunchy/key_management/internal/advanced_keyset_manager.h"
 #include "crunchy/key_management/internal/keyset.pb.h"
 #include "crunchy/key_management/keyset_enums.pb.h"
 
@@ -45,8 +46,10 @@ KeysetManager::KeysetManager(std::shared_ptr<KeysetHandle> keyset_handle)
       advanced_keyset_manager_(::absl::make_unique<AdvancedKeysetManager>(
           std::move(keyset_handle))) {}
 
+KeysetManager::~KeysetManager() {}
+
 StatusOr<std::shared_ptr<KeyHandle>> KeysetManager::GenerateAndAddNewKey(
-    absl::string_view type_name) {
+    const KeyType& type) {
   uint16_t max_prefix = 0;
   std::unordered_set<std::string> existing_prefixes;
   for (const auto& key_handle : keyset_handle_->key_handles()) {
@@ -94,7 +97,7 @@ StatusOr<std::shared_ptr<KeyHandle>> KeysetManager::GenerateAndAddNewKey(
 
   StatusOr<std::shared_ptr<KeyHandle>> status_or_key_handle =
       advanced_keyset_manager_->CreateNewKey(
-          type_name, std::string(prefix, kCrunchyDefaultKeyPrefixLength));
+          type, std::string(prefix, kCrunchyDefaultKeyPrefixLength));
   if (!status_or_key_handle.ok()) {
     return status_or_key_handle.status();
   }
@@ -102,7 +105,8 @@ StatusOr<std::shared_ptr<KeyHandle>> KeysetManager::GenerateAndAddNewKey(
   return status_or_key_handle.ValueOrDie();
 }
 
-const std::vector<std::shared_ptr<KeyHandle>>& KeysetManager::KeyHandles() {
+const std::vector<std::shared_ptr<KeyHandle>>& KeysetManager::KeyHandles()
+    const {
   return advanced_keyset_manager_->KeyHandles();
 }
 

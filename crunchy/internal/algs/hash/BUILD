@@ -72,7 +72,6 @@ cc_test(
     deps = [
         ":identity",
         "//crunchy/internal/common:status_matchers",
-        "//crunchy/util:status",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_main",
     ],
