@@ -59,9 +59,10 @@ namespace {
 
 std::unique_ptr<MacingKeyRegistry> MakeRegistry() {
   auto registry = absl::make_unique<MacingKeyRegistry>();
-  CRUNCHY_CHECK_EQ(registry->Register("hmac-sha256-halfdigest",
-                                      MakeFactory(GetHmacSha256Factory())),
-                   OkStatus());
+  CRUNCHY_CHECK_EQ(
+      registry->Register("hmac-sha256-halfdigest",
+                         MakeFactory(GetHmacSha256HalfDigestFactory())),
+      OkStatus());
   return registry;
 }
 

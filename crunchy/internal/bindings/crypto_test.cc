@@ -21,6 +21,7 @@
 #include "crunchy/internal/common/file.h"
 #include "crunchy/internal/common/status_matchers.h"
 #include "crunchy/internal/common/string_buffer.h"
+#include "crunchy/internal/common/test_factory.h"
 #include "crunchy/internal/keyset/aead_crypting_key_registry.h"
 #include "crunchy/internal/keyset/testdata/factory_test_vectors.pb.h"
 #include "crunchy/internal/port/port.h"
@@ -122,16 +123,11 @@ void VerifyTestVector(const CrypterFactoryTestVector& test_vector) {
 }
 
 const CrypterFactoryTestVectors& GetCrypterFactoryTestVectors() {
-  static const CrypterFactoryTestVectors& test_vectors = []() {
-    CrypterFactoryTestVectors test_vectors;
-    std::string serialized_test_vectors;
-    CRUNCHY_CHECK_OK(
-        GetFile("crunchy/internal/keyset/testdata/"
-                "crypter_factory_test_vectors.proto.bin",
-                &serialized_test_vectors));
-    CRUNCHY_CHECK(test_vectors.ParseFromString(serialized_test_vectors));
-    return test_vectors;
-  }();
+  static const CrypterFactoryTestVectors& test_vectors =
+      *new CrypterFactoryTestVectors(
+          GetProtoFromFileOrDie<CrypterFactoryTestVectors>(
+              "crunchy/internal/keyset/testdata/"
+              "crypter_factory_test_vectors.proto.bin"));
   return test_vectors;
 }
 
@@ -484,16 +480,11 @@ void VerifyTestVector(const MacerFactoryTestVector& test_vector) {
 }
 
 const MacerFactoryTestVectors& GetMacerFactoryTestVectors() {
-  static const MacerFactoryTestVectors& test_vectors = []() {
-    MacerFactoryTestVectors test_vectors;
-    std::string serialized_test_vectors;
-    CRUNCHY_CHECK_OK(
-        GetFile("crunchy/internal/keyset/testdata/"
-                "macer_factory_test_vectors.proto.bin",
-                &serialized_test_vectors));
-    CRUNCHY_CHECK(test_vectors.ParseFromString(serialized_test_vectors));
-    return test_vectors;
-  }();
+  static const MacerFactoryTestVectors& test_vectors =
+      *new MacerFactoryTestVectors(
+          GetProtoFromFileOrDie<MacerFactoryTestVectors>(
+              "crunchy/internal/keyset/testdata/"
+              "macer_factory_test_vectors.proto.bin"));
   return test_vectors;
 }
 
@@ -799,16 +790,11 @@ void VerifyTestVector(const SignerFactoryTestVector& test_vector) {
 }
 
 const SignerFactoryTestVectors& GetSignerFactoryTestVectors() {
-  static const SignerFactoryTestVectors& test_vectors = []() {
-    SignerFactoryTestVectors test_vectors;
-    std::string serialized_test_vectors;
-    CRUNCHY_CHECK_OK(
-        GetFile("crunchy/internal/keyset/testdata/"
-                "signer_factory_test_vectors.proto.bin",
-                &serialized_test_vectors));
-    CRUNCHY_CHECK(test_vectors.ParseFromString(serialized_test_vectors));
-    return test_vectors;
-  }();
+  static const SignerFactoryTestVectors& test_vectors =
+      *new SignerFactoryTestVectors(
+          GetProtoFromFileOrDie<SignerFactoryTestVectors>(
+              "crunchy/internal/keyset/testdata/"
+              "signer_factory_test_vectors.proto.bin"));
   return test_vectors;
 }
 
@@ -1167,16 +1153,11 @@ void VerifyTestVector(const HybridCrypterFactoryTestVector& test_vector) {
 }
 
 const HybridCrypterFactoryTestVectors& GetHybridCrypterFactoryTestVectors() {
-  static const HybridCrypterFactoryTestVectors& test_vectors = []() {
-    HybridCrypterFactoryTestVectors test_vectors;
-    std::string serialized_test_vectors;
-    CRUNCHY_CHECK_OK(
-        GetFile("crunchy/internal/keyset/testdata/"
-                "hybrid_crypter_factory_test_vectors.proto.bin",
-                &serialized_test_vectors));
-    CRUNCHY_CHECK(test_vectors.ParseFromString(serialized_test_vectors));
-    return test_vectors;
-  }();
+  static const HybridCrypterFactoryTestVectors& test_vectors =
+      *new HybridCrypterFactoryTestVectors(
+          GetProtoFromFileOrDie<HybridCrypterFactoryTestVectors>(
+              "crunchy/internal/keyset/testdata/"
+              "hybrid_crypter_factory_test_vectors.proto.bin"));
   return test_vectors;
 }
 

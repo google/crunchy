@@ -244,12 +244,14 @@ void VerifyTestVector(const MacingKeyRegistry& registry,
 
 TEST(KeysetFactoryTest, TestVectors) {
   const MacingKeyRegistry& registry = GetMacingKeyRegistry();
-  MacerFactoryTestVectors test_vectors;
 
-  std::string serialized_test_vectors;
-  CRUNCHY_EXPECT_OK(GetFile(kTestDataPath, &serialized_test_vectors))
+  auto status_or_test_vectors =
+      GetProtoFromFile<MacerFactoryTestVectors>(kTestDataPath);
+  CRUNCHY_EXPECT_OK(status_or_test_vectors.status())
       << "Couldn't load test vectors, try passing --gen_test_vectors=yes";
-  EXPECT_TRUE(test_vectors.ParseFromString(serialized_test_vectors));
+  MacerFactoryTestVectors test_vectors =
+      std::move(status_or_test_vectors).ValueOrDie();
+
   for (const MacerFactoryTestVector& test_vector : test_vectors.test_vector()) {
     VerifyTestVector(registry, test_vector);
   }

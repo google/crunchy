@@ -89,3 +89,15 @@ cc_library(
         "@com_google_absl//absl/strings",
     ],
 )
+
+cc_test(
+    name = "rsa_test",
+    srcs = ["rsa_test.cc"],
+    deps = [
+        ":rsa",
+        "//crunchy/internal/common:status_matchers",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest_main",
+    ],
+)

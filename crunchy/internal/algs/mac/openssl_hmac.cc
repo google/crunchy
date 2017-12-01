@@ -19,6 +19,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "crunchy/internal/algs/openssl/errors.h"
 #include "crunchy/internal/common/string_buffer.h"
@@ -30,9 +31,6 @@
 namespace crunchy {
 
 namespace {
-
-const EVP_MD* kEvpMd = EVP_sha256();
-const size_t kDigestLength = 32;
 
 bool SecureEquals(const char* left, size_t left_length, const char* right,
                   size_t right_length) {
@@ -46,10 +44,12 @@ bool SecureEquals(const char* left, size_t left_length, const char* right,
   return result == 0x00;
 }
 
-class HmacSha256Factory : public MacFactory {
+class HmacFactory : public MacFactory {
  public:
-  HmacSha256Factory(size_t key_length, size_t signature_length)
-      : key_length_(key_length), signature_length_(signature_length) {}
+  HmacFactory(const EVP_MD* evp_md, size_t key_length, size_t signature_length)
+      : evp_md_(evp_md),
+        key_length_(key_length),
+        signature_length_(signature_length) {}
 
   size_t GetKeyLength() const override { return key_length_; }
   size_t GetSignatureLength() const override { return signature_length_; }
@@ -57,15 +57,18 @@ class HmacSha256Factory : public MacFactory {
   StatusOr<std::unique_ptr<MacInterface>> Make(
       absl::string_view key) const override;
 
+  const EVP_MD* evp_md() const { return evp_md_; }
+
  private:
+  const EVP_MD* evp_md_;
   const size_t key_length_;
   const size_t signature_length_;
 };
 
 // An interface for computing a cryptographic MAC.
-class HmacSha256 : public MacInterface {
+class Hmac : public MacInterface {
  public:
-  HmacSha256(const HmacSha256Factory& factory, absl::string_view key)
+  Hmac(const HmacFactory& factory, absl::string_view key)
       : factory_(factory), key_(key) {}
 
   // Signs the given std::string and returns the signature.
@@ -77,28 +80,28 @@ class HmacSha256 : public MacInterface {
   }
 
  private:
-  const HmacSha256Factory& factory_;
+  const HmacFactory& factory_;
   std::string key_;
 
   StatusOr<std::string> Mac(absl::string_view input) const;
 };
 
-StatusOr<std::unique_ptr<MacInterface>> HmacSha256Factory::Make(
+StatusOr<std::unique_ptr<MacInterface>> HmacFactory::Make(
     absl::string_view key) const {
   if (key.size() != GetKeyLength()) {
     return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
            << "Key length was " << key.size() << " but length "
            << GetKeyLength() << " is required";
   }
-  return {absl::make_unique<HmacSha256>(*this, key)};
+  return {absl::make_unique<Hmac>(*this, key)};
 }
 
-StatusOr<std::string> HmacSha256::Mac(absl::string_view input) const {
-  StringBuffer result(kDigestLength);
-  unsigned int in_out_bytes = kDigestLength;
+StatusOr<std::string> Hmac::Mac(absl::string_view input) const {
+  StringBuffer result(EVP_MD_size(factory_.evp_md()));
+  unsigned int in_out_bytes = EVP_MD_size(factory_.evp_md());
 
   // Call openssl's HMAC function
-  if (HMAC(kEvpMd, key_.data(), key_.length(),
+  if (HMAC(factory_.evp_md(), key_.data(), key_.length(),
            reinterpret_cast<const uint8_t*>(input.data()), input.size(),
            result.data(), &in_out_bytes) == nullptr) {
     return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
@@ -108,7 +111,7 @@ StatusOr<std::string> HmacSha256::Mac(absl::string_view input) const {
   return result.as_string();
 }
 
-StatusOr<std::string> HmacSha256::Sign(absl::string_view input) const {
+StatusOr<std::string> Hmac::Sign(absl::string_view input) const {
   auto status_or_mac = Mac(input);
   if (!status_or_mac.ok()) {
     return status_or_mac.status();
@@ -118,8 +121,8 @@ StatusOr<std::string> HmacSha256::Sign(absl::string_view input) const {
   return std::move(mac);
 }
 
-Status HmacSha256::Verify(absl::string_view input,
-                          absl::string_view signature) const {
+Status Hmac::Verify(absl::string_view input,
+                    absl::string_view signature) const {
   if (signature.size() != GetSignatureLength()) {
     return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
            << "Signature length was " << signature.size() << " expected "
@@ -139,17 +142,47 @@ Status HmacSha256::Verify(absl::string_view input,
   return OkStatus();
 }
 
+StatusOr<std::unique_ptr<MacFactory>> MakeFactory(const EVP_MD* evp_md,
+                                                  size_t key_length,
+                                                  size_t signature_length) {
+  size_t digest_length = EVP_MD_size(evp_md);
+  if (signature_length > digest_length) {
+    return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Signature length was " << signature_length
+           << " bytes but the digest is only " << digest_length << " bytes";
+  }
+  return {absl::make_unique<HmacFactory>(evp_md, key_length, signature_length)};
+}
+
 }  // namespace
 
-const MacFactory& GetHmacSha256Factory() {
+const MacFactory& GetHmacSha256HalfDigestFactory() {
+  static const size_t digest_length = EVP_MD_size(EVP_sha256());
   static const MacFactory& factory =
-      *new HmacSha256Factory(kDigestLength, kDigestLength / 2);
+      *MakeHmacSha256Factory(digest_length, digest_length / 2)
+           .ValueOrDie()
+           .release();
   return factory;
 }
 
-std::unique_ptr<MacFactory> MakeHmacSha256FactoryForTest(
+StatusOr<std::unique_ptr<MacFactory>> MakeHmacSha256Factory(
     size_t key_length, size_t signature_length) {
-  return absl::make_unique<HmacSha256Factory>(key_length, signature_length);
+  return MakeFactory(EVP_sha256(), key_length, signature_length);
+}
+
+StatusOr<std::unique_ptr<MacFactory>> MakeHmacSha384Factory(
+    size_t key_length, size_t signature_length) {
+  return MakeFactory(EVP_sha384(), key_length, signature_length);
+}
+
+StatusOr<std::unique_ptr<MacFactory>> MakeHmacSha512Factory(
+    size_t key_length, size_t signature_length) {
+  return MakeFactory(EVP_sha512(), key_length, signature_length);
+}
+
+StatusOr<std::unique_ptr<MacFactory>> MakeHmacSha1Factory(
+    size_t key_length, size_t signature_length) {
+  return MakeFactory(EVP_sha1(), key_length, signature_length);
 }
 
 }  // namespace crunchy

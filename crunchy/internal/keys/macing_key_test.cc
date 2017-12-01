@@ -33,7 +33,7 @@ namespace {
 std::vector<FactoryInfo<MacingKeyFactory>>* FactoryInfoVector() {
   auto factories = new std::vector<FactoryInfo<MacingKeyFactory>>();
   static const MacingKeyFactory& hmac_sha256_factory =
-      *MakeFactory(GetHmacSha256Factory()).release();
+      *MakeFactory(GetHmacSha256HalfDigestFactory()).release();
   factories->push_back(
       {"hmac_sha256", hmac_sha256_factory,
        "crunchy/internal/keys/testdata/hmac_sha256.proto.bin"});
@@ -136,7 +136,7 @@ void VerifyTestVector(const MacingKeyFactory& factory,
 
 TEST_P(MacingKeyTest, TestVectors) {
   auto test_vectors = GetTestVectors<MacingKeyTestVectors>();
-  for (const auto& test_vector : test_vectors->test_vector()) {
+  for (const auto& test_vector : test_vectors.test_vector()) {
     VerifyTestVector(factory(), test_vector);
   }
 }

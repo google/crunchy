@@ -34,6 +34,11 @@ StatusOr<std::string> SerializePublicKey(const RSA* rsa);
 StatusOr<openssl_unique_ptr<RSA>> DeserializePublicKey(
     absl::string_view serialized_public_key);
 
+// Attempts to deserialize a public key from DER format to an RSA public key in
+// PEM format.
+StatusOr<std::string> DeserializeDerPublicKeyAsPemPublicKey(
+    absl::string_view der_public_key);
+
 }  // namespace crunchy
 
 #endif  // CRUNCHY_ALGS_OPENSSL_RSA_H_

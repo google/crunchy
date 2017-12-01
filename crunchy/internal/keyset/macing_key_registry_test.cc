@@ -50,11 +50,11 @@ TEST(MacingKeyRegistryTest, UnregisteredLabel) {
 
 TEST(MacingKeyRegistryTest, DoubleRegister) {
   auto registry = absl::make_unique<MacingKeyRegistry>();
-  CRUNCHY_ASSERT_OK(registry->Register("hmac-sha256-halfdigest",
-                                       MakeFactory(GetHmacSha256Factory())));
+  CRUNCHY_ASSERT_OK(registry->Register(
+      "hmac-sha256-halfdigest", MakeFactory(GetHmacSha256HalfDigestFactory())));
   ASSERT_FALSE(registry
                    ->Register("hmac-sha256-halfdigest",
-                              MakeFactory(GetHmacSha256Factory()))
+                              MakeFactory(GetHmacSha256HalfDigestFactory()))
                    .ok());
 }
 

@@ -205,7 +205,7 @@ TEST_P(AeadCryptingKeyTest, TestVectors) {
     return;
   }
   auto test_vectors = GetTestVectors<AeadCryptingKeyTestVectors>();
-  for (const auto& test_vector : test_vectors->test_vector()) {
+  for (const auto& test_vector : test_vectors.test_vector()) {
     VerifyTestVector(factory(), test_vector);
   }
 }

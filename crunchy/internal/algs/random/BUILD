@@ -23,7 +23,7 @@ cc_library(
     srcs = ["crypto_rand.cc"],
     hdrs = ["crypto_rand.h"],
     deps = [
-        "//crunchy/internal/port:logging",
+        "//crunchy/internal/port",
         "@boringssl//:crypto",
     ],
 )

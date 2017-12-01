@@ -210,7 +210,7 @@ void VerifyTestVector(const SigningKeyFactory& factory,
 
 TEST_P(SigningKeyTest, TestVectors) {
   auto test_vectors = GetTestVectors<SigningKeyTestVectors>();
-  for (const auto& test_vector : test_vectors->test_vector()) {
+  for (const auto& test_vector : test_vectors.test_vector()) {
     VerifyTestVector(factory(), test_vector);
   }
 }

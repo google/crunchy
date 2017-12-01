@@ -43,6 +43,7 @@ cc_test(
         "//crunchy/internal/common:file",
         "//crunchy/internal/common:status_matchers",
         "//crunchy/internal/common:string_buffer",
+        "//crunchy/internal/common:test_factory",
         "//crunchy/internal/keyset:aead_crypting_key_registry",
         "//crunchy/internal/keyset/testdata:factory_test_vectors_proto_cc",
         "//crunchy/internal/port",

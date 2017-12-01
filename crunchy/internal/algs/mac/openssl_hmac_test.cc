@@ -43,13 +43,31 @@ using testing::crunchy_status::StatusIs;
 std::vector<FactoryInfo<MacFactory>>* FactoryInfoVector() {
   auto factories = new std::vector<FactoryInfo<MacFactory>>();
   factories->push_back(
-      {"HmacSha256", GetHmacSha256Factory(),
+      {"HmacSha256", GetHmacSha256HalfDigestFactory(),
        "crunchy/internal/algs/mac/testdata/hmac_sha256.proto.bin"});
+
+  static const MacFactory& hmac_sha384_factory =
+      *MakeHmacSha384Factory(48, 24).ValueOrDie().release();
+  factories->push_back(
+      {"HmacSha384", hmac_sha384_factory,
+       "crunchy/internal/algs/mac/testdata/hmac_sha384.proto.bin"});
+
+  static const MacFactory& hmac_sha512_factory =
+      *MakeHmacSha512Factory(64, 32).ValueOrDie().release();
+  factories->push_back(
+      {"HmacSha512", hmac_sha512_factory,
+       "crunchy/internal/algs/mac/testdata/hmac_sha512.proto.bin"});
+
+  static const MacFactory& hmac_sha1_factory =
+      *MakeHmacSha1Factory(20, 10).ValueOrDie().release();
+  factories->push_back(
+      {"HmacSha1", hmac_sha1_factory,
+       "crunchy/internal/algs/mac/testdata/hmac_sha1.proto.bin"});
   return factories;
 }
 
 using MacTest = FactoryParamTest<MacFactory, FactoryInfoVector>;
-const MacFactory& factory() { return GetHmacSha256Factory(); }
+const MacFactory& factory() { return GetHmacSha256HalfDigestFactory(); }
 
 // Sign/Verify using a random key.
 TEST_P(MacTest, SignVerify) {
@@ -145,7 +163,7 @@ INSTANTIATE_TEST_CASE_P(, MacTest, ::testing::ValuesIn(MacTest::factories()),
 void VerifyRfcTestVector(absl::string_view key, absl::string_view message,
                          absl::string_view signature) {
   std::unique_ptr<MacFactory> factory =
-      MakeHmacSha256FactoryForTest(key.size(), signature.size());
+      MakeHmacSha256Factory(key.size(), signature.size()).ValueOrDie();
 
   auto status_or_mac = factory->Make(key);
   CRUNCHY_EXPECT_OK(status_or_mac.status());
@@ -301,7 +319,7 @@ TEST_P(MacTest, TestVectors) {
     return;
   }
   auto test_vectors = GetTestVectors<MacTestVectors>();
-  for (const auto& test_vector : test_vectors->test_vector()) {
+  for (const auto& test_vector : test_vectors.test_vector()) {
     VerifyTestVector(factory(), test_vector);
   }
 }

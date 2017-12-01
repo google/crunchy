@@ -245,14 +245,24 @@ class RsaFactory : public SignerFactory {
     return OkStatus();
   }
 
+  virtual bool IsValidModulus(const RSA* rsa) const {
+    return RSA_size(rsa) * 8 == modulus_length_;
+  }
+
   StatusOr<std::unique_ptr<SignerInterface>> MakeSigner(
       absl::string_view private_key) const override {
     auto status_or_rsa = DeserializePrivateKey(private_key);
     if (!status_or_rsa.ok()) {
       return status_or_rsa.status();
     }
-    return {absl::make_unique<RsaSigner>(
-        alg_, std::move(status_or_rsa.ValueOrDie()), hash_input_, hash_)};
+    openssl_unique_ptr<RSA> rsa = std::move(status_or_rsa).ValueOrDie();
+    if (!IsValidModulus(rsa.get())) {
+      return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
+             << (RSA_size(rsa.get()) * 8) << "-bit modulus given, "
+             << modulus_length_ << "-bit modulus expected.";
+    }
+    return {
+        absl::make_unique<RsaSigner>(alg_, std::move(rsa), hash_input_, hash_)};
   }
 
   StatusOr<std::unique_ptr<VerifierInterface>> MakeVerifier(
@@ -261,7 +271,12 @@ class RsaFactory : public SignerFactory {
     if (!status_or_rsa.ok()) {
       return status_or_rsa.status();
     }
-    openssl_unique_ptr<RSA> rsa = std::move(status_or_rsa.ValueOrDie());
+    openssl_unique_ptr<RSA> rsa = std::move(status_or_rsa).ValueOrDie();
+    if (!IsValidModulus(rsa.get())) {
+      return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
+             << (RSA_size(rsa.get()) * 8) << "-bit modulus given, "
+             << modulus_length_ << "-bit modulus expected.";
+    }
     return {absl::make_unique<RsaVerifier>(alg_, std::move(rsa), hash_input_,
                                            hash_)};
   }
@@ -274,6 +289,12 @@ class RsaFactory : public SignerFactory {
   PaddingAlgorithm alg_;
 };
 
+// An implementation of RsaFactory that skips modulus size checks.
+class RsaFactoryNoChecks : public RsaFactory {
+  using RsaFactory::RsaFactory;
+  bool IsValidModulus(const RSA* /* rsa */) const override { return true; }
+};
+
 }  // namespace
 
 std::unique_ptr<SignerFactory> MakeRsaFactory(
@@ -281,6 +302,13 @@ std::unique_ptr<SignerFactory> MakeRsaFactory(
     const Hasher& hash) {
   return absl::make_unique<RsaFactory>(modulus_length, alg, e,
                                        /* hash_input= */ true, hash);
+}
+
+std::unique_ptr<SignerFactory> MakeRsaFactoryNoChecks(
+    SignModulusBitLength modulus_length, PaddingAlgorithm alg, int e,
+    const Hasher& hash) {
+  return absl::make_unique<RsaFactoryNoChecks>(modulus_length, alg, e,
+                                               /* hash_input= */ true, hash);
 }
 
 std::unique_ptr<SignerFactory> MakeRsaFactoryWithHashedInput(

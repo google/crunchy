@@ -30,8 +30,7 @@ enum class PaddingAlgorithm {
   // RSASSA-PSS signer is based on RFC 3447
   // (https://tools.ietf.org/html/rfc3447) and can be used with both
   // SignModulusBitLength::B2048 and SignModulusBitLength::B4096 RSA signatures.
-  // The
-  // salt length used matches the length of the hash algorithm.
+  // The salt length used matches the length of the hash algorithm.
   PSS,
 };
 
@@ -44,6 +43,12 @@ enum class SignModulusBitLength {
 // public exponent in RSA), and hash_algorithm (sha256, sha384, or sha512). The
 // serialized public and private key are DER encoded.
 std::unique_ptr<SignerFactory> MakeRsaFactory(
+    SignModulusBitLength modulus_length, PaddingAlgorithm alg, int e,
+    const Hasher& hash);
+
+// Same as MakeRsaFactory, except modulus size checks that happen during
+// deserialization are skipped.
+std::unique_ptr<SignerFactory> MakeRsaFactoryNoChecks(
     SignModulusBitLength modulus_length, PaddingAlgorithm alg, int e,
     const Hasher& hash);
 

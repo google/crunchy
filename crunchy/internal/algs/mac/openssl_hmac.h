@@ -24,10 +24,18 @@ namespace crunchy {
 
 // Returns an HMAC-SHA256 implmentation with a (truncated) 16-byte (half
 // digest) signature. Requires that the key be exactly 32 bytes (full digest).
-const MacFactory& GetHmacSha256Factory();
+const MacFactory& GetHmacSha256HalfDigestFactory();
 
-// Uses arbitrary key and tag lengths. We use this to verify test vectors.
-std::unique_ptr<MacFactory> MakeHmacSha256FactoryForTest(
+StatusOr<std::unique_ptr<MacFactory>> MakeHmacSha256Factory(
+    size_t key_length, size_t signature_length);
+
+StatusOr<std::unique_ptr<MacFactory>> MakeHmacSha384Factory(
+    size_t key_length, size_t signature_length);
+
+StatusOr<std::unique_ptr<MacFactory>> MakeHmacSha512Factory(
+    size_t key_length, size_t signature_length);
+
+StatusOr<std::unique_ptr<MacFactory>> MakeHmacSha1Factory(
     size_t key_length, size_t signature_length);
 
 }  // namespace crunchy

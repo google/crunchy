@@ -305,6 +305,12 @@ class ABSL_MUST_USE_RESULT StatusOr {
   T value_;
 };
 
+template <typename T>
+inline std::ostream& operator<<(std::ostream& os, const StatusOr<T>& x) {
+  os << x.status().ToString();
+  return os;
+}
+
 inline StatusBuilder AbortedErrorBuilder(source_location location) {
   return StatusBuilder(Code::ABORTED, location);
 }

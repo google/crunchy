@@ -32,6 +32,9 @@
 
 namespace crunchy {
 
+using testing::HasSubstr;
+using testing::crunchy_status::StatusIs;
+
 namespace {
 
 std::vector<FactoryInfo<SignerFactory>>* FactoryInfoVector() {
@@ -73,7 +76,7 @@ TEST_P(SignerTest, TestVectors) {
   EXPECT_FALSE(test_data_path().empty())
       << name() << " has an empty test_data_path";
   auto test_vectors = GetTestVectors<SignerTestVectors>();
-  for (const auto& test_vector : test_vectors->test_vector()) {
+  for (const auto& test_vector : test_vectors.test_vector()) {
     VerifyTestVector(factory(), test_vector);
   }
 }
@@ -159,6 +162,48 @@ TEST(Rsa2048, TestVectors) {
   test_vector.set_signature(absl::HexStringToBytes(pss_signature_hex));
   const auto& pss_factory = GetRsa2048PssFactory();
   VerifyTestVector(pss_factory, test_vector);
+}
+TEST(Rsa, NoChecks) {
+  // Create factories/keys for RSA 2048 and RSA 4096.
+  std::unique_ptr<SignerFactory> factory2048 =
+      MakeRsaFactory(SignModulusBitLength::B2048, PaddingAlgorithm::PKCS1,
+                     RSA_F4 /* 2^16+1 */, Sha256::Instance());
+
+  std::string public2048;
+  std::string private2048;
+  CRUNCHY_EXPECT_OK(factory2048->NewKeypair(&public2048, &private2048));
+
+  std::unique_ptr<SignerFactory> factory4096 =
+      MakeRsaFactory(SignModulusBitLength::B4096, PaddingAlgorithm::PKCS1,
+                     RSA_F4 /* 2^16+1 */, Sha256::Instance());
+  std::string public4096;
+  std::string private4096;
+  CRUNCHY_EXPECT_OK(factory4096->NewKeypair(&public4096, &private4096));
+
+  // ensure that these fail to construct signers/verifier if used with a factory
+  // having the wrong modulus.
+  EXPECT_THAT(
+      factory2048->MakeSigner(private4096),
+      StatusIs(
+          INVALID_ARGUMENT,
+          HasSubstr("4096-bit modulus given, 2048-bit modulus expected.")));
+  EXPECT_THAT(
+      factory2048->MakeVerifier(public4096).status(),
+      StatusIs(
+          INVALID_ARGUMENT,
+          HasSubstr("4096-bit modulus given, 2048-bit modulus expected.")));
+
+  // Try again using the "NoChecks versions of these factories
+  factory2048 = MakeRsaFactoryNoChecks(SignModulusBitLength::B2048,
+                                       PaddingAlgorithm::PKCS1,
+                                       RSA_F4 /* 2^16+1 */, Sha256::Instance());
+  factory4096 = MakeRsaFactoryNoChecks(SignModulusBitLength::B4096,
+                                       PaddingAlgorithm::PKCS1,
+                                       RSA_F4 /* 2^16+1 */, Sha256::Instance());
+  CRUNCHY_EXPECT_OK(factory2048->MakeSigner(private4096));
+  CRUNCHY_EXPECT_OK(factory2048->MakeVerifier(public4096));
+  CRUNCHY_EXPECT_OK(factory4096->MakeSigner(private2048));
+  CRUNCHY_EXPECT_OK(factory4096->MakeVerifier(public2048));
 }
 
 }  // namespace

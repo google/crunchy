@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "crunchy/internal/algs/openssl/rsa.h"
+#include <openssl/pem.h>
 
 namespace crunchy {
 
@@ -70,6 +71,32 @@ StatusOr<openssl_unique_ptr<RSA>> DeserializePublicKey(
            << GetOpensslErrors();
   }
   return std::move(rsa);
+}
+
+StatusOr<std::string> DeserializeDerPublicKeyAsPemPublicKey(
+    absl::string_view der_public_key) {
+  auto bio = openssl_make_unique<BIO>(BIO_s_mem());
+
+  openssl_unique_ptr<RSA> rsa(RSA_public_key_from_bytes(
+      reinterpret_cast<const uint8_t*>(der_public_key.data()),
+      der_public_key.size()));
+  if (rsa == nullptr) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "RSA generate key error." << GetOpensslErrors();
+  }
+  if (PEM_write_bio_RSAPublicKey(bio.get(), rsa.get()) <= 0) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Save to public key file error." << GetOpensslErrors();
+  }
+
+  const uint8_t* pem = nullptr;
+  size_t pem_length = 0;
+  if (!BIO_mem_contents(bio.get(), &pem, &pem_length) || !pem) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error getting pem: " << GetOpensslErrors();
+  }
+
+  return {std::string(reinterpret_cast<const char*>(pem), pem_length)};
 }
 
 }  // namespace crunchy

@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "google/protobuf/message.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
@@ -43,6 +44,33 @@ struct FactoryInfo {
   const F& factory;
   std::string test_data_path;
 };
+
+template <class T>
+StatusOr<T> GetProtoFromFile(absl::string_view filename) {
+  static_assert(std::is_base_of<::google::protobuf::Message, T>::value,
+                "Template type is not a subclass of ::google::protobuf::Message");
+  if (filename.empty()) {
+    return InvalidArgumentError("filename is empty.");
+  }
+  T proto;
+  std::string serialized_test_vectors;
+  Status status = GetFile(filename, &serialized_test_vectors);
+  if (!status.ok()) {
+    return FailedPreconditionErrorBuilder(CRUNCHY_LOC)
+           << "Couldn't load file " << filename << ".";
+  }
+  if (!proto.ParseFromString(serialized_test_vectors)) {
+    return FailedPreconditionError("Couldn't parse proto.");
+  }
+  return std::move(proto);
+}
+
+template <class T>
+T GetProtoFromFileOrDie(absl::string_view filename) {
+  StatusOr<T> status_or_proto = GetProtoFromFile<T>(filename);
+  CRUNCHY_CHECK_OK(status_or_proto.status());
+  return std::move(status_or_proto).ValueOrDie();
+}
 
 // See hybrid_test.cc for sample usage.
 // Templated with a factory class F and an initializer I.
@@ -82,16 +110,14 @@ class FactoryParamTest : public ::testing::TestWithParam<FactoryInfo<F>> {
   const std::string& test_data_path() { return this->GetParam().test_data_path; }
 
   template <class T>
-  std::unique_ptr<T> GetTestVectors() {
+  T GetTestVectors() {
     EXPECT_FALSE(this->GetParam().test_data_path.empty());
-    auto test_vectors = absl::make_unique<T>();
-    std::string serialized_test_vectors;
-    CRUNCHY_EXPECT_OK(
-        GetFile(this->GetParam().test_data_path, &serialized_test_vectors))
+    auto status_or_test_vectors =
+        GetProtoFromFile<T>(this->GetParam().test_data_path);
+    CRUNCHY_EXPECT_OK(status_or_test_vectors.status())
         << "Couldn't load test vectors, try passing --gen_test_vectors="
         << name();
-    EXPECT_TRUE(test_vectors->ParseFromString(serialized_test_vectors));
-    return std::move(test_vectors);
+    return std::move(status_or_test_vectors).ValueOrDie();
   }
 };
 

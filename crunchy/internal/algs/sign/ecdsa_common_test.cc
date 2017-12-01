@@ -116,7 +116,7 @@ TEST_P(SignerTest, TestVectors) {
   EXPECT_FALSE(test_data_path().empty())
       << name() << " has an empty test_data_path";
   auto test_vectors = GetTestVectors<SignerTestVectors>();
-  for (const auto& test_vector : test_vectors->test_vector()) {
+  for (const auto& test_vector : test_vectors.test_vector()) {
     VerifyTestVector(factory(), test_vector);
   }
 }

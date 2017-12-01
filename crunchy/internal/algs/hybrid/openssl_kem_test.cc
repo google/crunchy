@@ -252,7 +252,7 @@ TEST_P(KemTest, TestVectors) {
     return;
   }
   auto test_vectors = GetTestVectors<KemTestVectors>();
-  for (const auto& test_vector : test_vectors->test_vector()) {
+  for (const auto& test_vector : test_vectors.test_vector()) {
     VerifyTestVector(factory(), test_vector);
   }
 }

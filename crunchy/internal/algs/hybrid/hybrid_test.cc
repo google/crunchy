@@ -254,7 +254,7 @@ TEST_P(HybridCrypterTest, TestVectors) {
     return;
   }
   auto test_vectors = GetTestVectors<HybridCrypterTestVectors>();
-  for (const auto& test_vector : test_vectors->test_vector()) {
+  for (const auto& test_vector : test_vectors.test_vector()) {
     VerifyTestVector(factory(), test_vector);
   }
 }

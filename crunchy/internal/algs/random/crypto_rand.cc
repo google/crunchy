@@ -17,7 +17,7 @@
 #include <openssl/rand.h>
 #include <string.h>
 
-#include "crunchy/internal/port/logging.h"
+#include "crunchy/internal/port/port.h"
 
 namespace crunchy {
 

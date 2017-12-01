@@ -22,7 +22,7 @@
 
 namespace crunchy {
 
-// Forward-declare AdvancedKeysetManager to avoid including an internal header.
+// Forward-declare to avoid including internal headers.
 class Key;
 class KeyMetadata;
 

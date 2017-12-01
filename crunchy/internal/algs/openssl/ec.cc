@@ -138,9 +138,15 @@ StatusOr<std::string> DeserializePointAsPemPublicKey(
     return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
            << "Openssl internal error writing bio: " << GetOpensslErrors();
   }
-  char* pem = nullptr;
-  size_t pem_length = BIO_get_mem_data(bio.get(), &pem);
-  return std::string(pem, pem_length);
+
+  const uint8_t* pem = nullptr;
+  size_t pem_length = 0;
+  if (!BIO_mem_contents(bio.get(), &pem, &pem_length) || !pem) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error getting pem: " << GetOpensslErrors();
+  }
+
+  return {std::string(reinterpret_cast<const char*>(pem), pem_length)};
 }
 
 StatusOr<std::string> SerializePrivateKey(const EC_GROUP* group, const EC_KEY* key) {

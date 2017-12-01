@@ -85,7 +85,7 @@ TEST_P(CrypterTest, TestVectors) {
     return;
   }
   auto test_vectors = GetTestVectors<CrypterInterfaceTestVectors>();
-  for (const auto& test_vector : test_vectors->vector()) {
+  for (const auto& test_vector : test_vectors.vector()) {
     VerifyTestVector(factory(), test_vector);
   }
 }
