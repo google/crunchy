@@ -49,7 +49,7 @@ Status Aes128GcmEncryptionExample() {
 
   // Make the newly created key the primary, it will be used for Encryption.
   Status status = keyset_manager->PromoteToPrimary(key_handle);
-  if (status.ok()) {
+  if (!status.ok()) {
     return status;
   }
 
@@ -60,7 +60,7 @@ Status Aes128GcmEncryptionExample() {
     return status_or_crypter.status();
   }
   std::unique_ptr<CrunchyCrypter> crypter =
-      std::move(status_or_crypter.ValueOrDie());
+      std::move(status_or_crypter).ValueOrDie();
 
   // Encrypt plaintext with our Crypter.
   const std::string plaintext = "banana";

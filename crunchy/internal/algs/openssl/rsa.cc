@@ -99,4 +99,19 @@ StatusOr<std::string> DeserializeDerPublicKeyAsPemPublicKey(
   return {std::string(reinterpret_cast<const char*>(pem), pem_length)};
 }
 
+StatusOr<std::string> DeserializePemPublicKeyAsDerPublicKey(
+    absl::string_view pem_public_key) {
+  std::string pem(pem_public_key);
+  openssl_unique_ptr<BIO> bio(BIO_new_mem_buf(&pem[0], pem.length()));
+  openssl_unique_ptr<RSA> rsa(
+      PEM_read_bio_RSAPublicKey(bio.get(), nullptr, nullptr, nullptr));
+  if (rsa == nullptr) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error converting PEM to RSA: "
+           << GetOpensslErrors();
+  }
+
+  return SerializePublicKey(rsa.get());
+}
+
 }  // namespace crunchy
