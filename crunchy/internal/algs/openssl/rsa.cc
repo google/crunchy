@@ -73,7 +73,61 @@ StatusOr<openssl_unique_ptr<RSA>> DeserializePublicKey(
   return std::move(rsa);
 }
 
-StatusOr<std::string> DeserializeDerPublicKeyAsPemPublicKey(
+StatusOr<std::string> DeserializeDerPublicKeyAsSubjectPublicKeyInfoPem(
+    absl::string_view der_public_key) {
+  auto bio = openssl_make_unique<BIO>(BIO_s_mem());
+  openssl_unique_ptr<RSA> rsa(RSA_public_key_from_bytes(
+      reinterpret_cast<const uint8_t*>(der_public_key.data()),
+      der_public_key.size()));
+  if (rsa == nullptr) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "RSA generate key error: " << GetOpensslErrors();
+  }
+
+  bssl::UniquePtr<EVP_PKEY> pkey(EVP_PKEY_new());
+  if (EVP_PKEY_set1_RSA(pkey.get(), rsa.get()) != 1) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error initializing PKEY: "
+           << GetOpensslErrors();
+  }
+  if (PEM_write_bio_PUBKEY(bio.get(), pkey.get()) != 1) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error getting PEM: " << GetOpensslErrors();
+  }
+
+  char* pem = nullptr;
+  auto pem_len = BIO_get_mem_data(bio.get(), &pem);
+  return std::string(pem, pem_len);
+}
+
+StatusOr<std::string> DeserializeSubjectPublicKeyInfoPemAsDerPublicKey(
+    absl::string_view pem_public_key) {
+  std::string pem(pem_public_key);
+  openssl_unique_ptr<BIO> bio(BIO_new_mem_buf(&pem[0], pem.length()));
+  bssl::UniquePtr<EVP_PKEY> pkey(
+      PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
+  if (pkey == nullptr) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error converting PEM to PKEY: "
+           << GetOpensslErrors();
+  }
+  if (pkey->type != EVP_PKEY_RSA) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "public key type " << pkey->type
+           << " is not supported: " << GetOpensslErrors();
+  }
+
+  openssl_unique_ptr<RSA> rsa(EVP_PKEY_get1_RSA(pkey.get()));
+  if (rsa == nullptr) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error converting PKEY to RSA: "
+           << GetOpensslErrors();
+  }
+
+  return SerializePublicKey(rsa.get());
+}
+
+StatusOr<std::string> DeserializeDerPublicKeyAsRsaPublicKeyPem(
     absl::string_view der_public_key) {
   auto bio = openssl_make_unique<BIO>(BIO_s_mem());
 
@@ -82,11 +136,11 @@ StatusOr<std::string> DeserializeDerPublicKeyAsPemPublicKey(
       der_public_key.size()));
   if (rsa == nullptr) {
     return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
-           << "RSA generate key error." << GetOpensslErrors();
+           << "RSA generate key error: " << GetOpensslErrors();
   }
   if (PEM_write_bio_RSAPublicKey(bio.get(), rsa.get()) <= 0) {
     return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
-           << "Save to public key file error." << GetOpensslErrors();
+           << "save to public key file error: " << GetOpensslErrors();
   }
 
   const uint8_t* pem = nullptr;
@@ -99,7 +153,7 @@ StatusOr<std::string> DeserializeDerPublicKeyAsPemPublicKey(
   return {std::string(reinterpret_cast<const char*>(pem), pem_length)};
 }
 
-StatusOr<std::string> DeserializePemPublicKeyAsDerPublicKey(
+StatusOr<std::string> DeserializeRsaPublicKeyPemAsDerPublicKey(
     absl::string_view pem_public_key) {
   std::string pem(pem_public_key);
   openssl_unique_ptr<BIO> bio(BIO_new_mem_buf(&pem[0], pem.length()));

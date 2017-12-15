@@ -18,11 +18,26 @@ licenses(["notice"])  # Apache 2.0
 
 cc_test(
     name = "aead",
-    srcs = [
-        "aead.cc",
-    ],
+    srcs = ["aead.cc"],
     deps = [
         "//crunchy:crunchy_crypter",
+        "//crunchy/internal/common:status_matchers",
+        "//crunchy/key_management:algorithms",
+        "//crunchy/key_management:crunchy_factory",
+        "//crunchy/key_management:key_handle",
+        "//crunchy/key_management:keyset_handle",
+        "//crunchy/key_management:keyset_manager",
+        "//crunchy/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "hybrid",
+    srcs = ["hybrid.cc"],
+    deps = [
+        "//crunchy:crunchy_hybrid_crypter",
         "//crunchy/internal/common:status_matchers",
         "//crunchy/key_management:algorithms",
         "//crunchy/key_management:crunchy_factory",

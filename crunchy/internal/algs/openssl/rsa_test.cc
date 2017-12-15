@@ -33,7 +33,18 @@ static constexpr char kRsaHexDer[] =
     "850f1bf20857d1f9908850c68d47bbac2b6074ba5b620cf80096cedb1d16271c2dc7f58eb2"
     "27debe4b103f9cc2ecd5e6ed03c80f17b4ffc61e53efedc13fefb64c949c14f628c02d61ed"
     "2d45e2463c430203010001";
-static constexpr char kRsaPem[] =
+static constexpr char kSubjectPublicKeyInfoPem[] =
+    R"(-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxRPc4VfQ+SBqwK45mC0D
+ItxhtaJ/HFV9Zsl6lpJC9B9MkgHKeML64o2EcUxY7Eo2prKPgr8WZu/qP1tggWs5
+Z4C1NSSMv1zMcUDjIKief1u2YJ2zODfPUo3UBlCs2Ai3EjgXobG5iYNNQ9L6TbJk
+fief/3NDdwC3y8/9nX9M8oIPcPVJWPG4NrG8Z7/35aBTNtHv/wFWmBuQ5WbDT+mk
+T5WlNiQYnOw8gPlwJcfEtSKFDxvyCFfR+ZCIUMaNR7usK2B0ultiDPgAls7bHRYn
+HC3H9Y6yJ96+SxA/nMLs1ebtA8gPF7T/xh5T7+3BP++2TJScFPYowC1h7S1F4kY8
+QwIDAQAB
+-----END PUBLIC KEY-----
+)";
+static constexpr char kRsaPublicKeyPem[] =
     R"(-----BEGIN RSA PUBLIC KEY-----
 MIIBCgKCAQEAxRPc4VfQ+SBqwK45mC0DItxhtaJ/HFV9Zsl6lpJC9B9MkgHKeML6
 4o2EcUxY7Eo2prKPgr8WZu/qP1tggWs5Z4C1NSSMv1zMcUDjIKief1u2YJ2zODfP
@@ -62,30 +73,59 @@ tcNtySEL+Pg2xqa7DmlEJFTH4ScYs5YZbfnRmzZZj71RluldSSiGTLYTgQ==
 -----END PUBLIC KEY-----
 )";
 
-TEST(DeserializeDerPublicKeyAsPemPublicKeyTest, RsHexDer) {
-  auto status_or_pem =
-      DeserializeDerPublicKeyAsPemPublicKey(absl::HexStringToBytes(kRsaHexDer));
+TEST(DeserializeDerPublicKeyAsSubjectPublicKeyInfoPemTest, RsaHexDer) {
+  auto status_or_pem = DeserializeDerPublicKeyAsSubjectPublicKeyInfoPem(
+      absl::HexStringToBytes(kRsaHexDer));
   CRUNCHY_EXPECT_OK(status_or_pem.status());
   std::string pem = std::move(status_or_pem.ValueOrDie());
-  EXPECT_EQ(pem, kRsaPem);
+  EXPECT_EQ(pem, kSubjectPublicKeyInfoPem);
 }
 
-TEST(DeserializeDerPublicKeyAsPemPublicKeyTest, NonRsaDer) {
+TEST(DeserializeDerPublicKeyAsSubjectPublicKeyInfoPemTest, NonRsaDer) {
   std::string unbased64_ecdsa;
   EXPECT_TRUE(absl::Base64Unescape(kEcdsaBase64Der, &unbased64_ecdsa));
-  EXPECT_THAT(DeserializeDerPublicKeyAsPemPublicKey(unbased64_ecdsa),
+  EXPECT_THAT(DeserializeDerPublicKeyAsSubjectPublicKeyInfoPem(unbased64_ecdsa),
               StatusIs(INTERNAL, HasSubstr("RSA generate key error")));
 }
 
-TEST(DeserializePemPublicKeyAsDerPublicKeyTest, RsaPem) {
-  auto status_or_der = DeserializePemPublicKeyAsDerPublicKey(kRsaPem);
+TEST(DeserializeSubjectPublicKeyInfoPemAsDerPublicKeyTest, RsaPem) {
+  auto status_or_der = DeserializeSubjectPublicKeyInfoPemAsDerPublicKey(
+      kSubjectPublicKeyInfoPem);
   CRUNCHY_EXPECT_OK(status_or_der.status());
   std::string der = std::move(status_or_der.ValueOrDie());
   EXPECT_EQ(absl::BytesToHexString(der), kRsaHexDer);
 }
 
-TEST(DeserializePemPublicKeyAsDerPublicKeyTest, NonRsaPem) {
-  EXPECT_THAT(DeserializePemPublicKeyAsDerPublicKey(kEcdsaPem),
+TEST(DeserializeSubjectPublicKeyInfoPemAsDerPublicKeyTest, NonRsaPem) {
+  EXPECT_THAT(DeserializeSubjectPublicKeyInfoPemAsDerPublicKey(kEcdsaPem),
+              StatusIs(INTERNAL, HasSubstr("public key type")));
+}
+
+TEST(DeserializeDerPublicKeyAsRsaPublicKeyPemTest, RsaHexDer) {
+  auto status_or_pem = DeserializeDerPublicKeyAsRsaPublicKeyPem(
+      absl::HexStringToBytes(kRsaHexDer));
+  CRUNCHY_EXPECT_OK(status_or_pem.status());
+  std::string pem = std::move(status_or_pem.ValueOrDie());
+  EXPECT_EQ(pem, kRsaPublicKeyPem);
+}
+
+TEST(DeserializeDerPublicKeyAsRsaPublicKeyPemTest, NonRsaDer) {
+  std::string unbased64_ecdsa;
+  EXPECT_TRUE(absl::Base64Unescape(kEcdsaBase64Der, &unbased64_ecdsa));
+  EXPECT_THAT(DeserializeDerPublicKeyAsRsaPublicKeyPem(unbased64_ecdsa),
+              StatusIs(INTERNAL, HasSubstr("RSA generate key error")));
+}
+
+TEST(DeserializeRsaPublicKeyPemAsDerPublicKeyTest, RsaPem) {
+  auto status_or_der =
+      DeserializeRsaPublicKeyPemAsDerPublicKey(kRsaPublicKeyPem);
+  CRUNCHY_EXPECT_OK(status_or_der.status());
+  std::string der = std::move(status_or_der.ValueOrDie());
+  EXPECT_EQ(absl::BytesToHexString(der), kRsaHexDer);
+}
+
+TEST(DeserializeRsaPublicKeyPemAsDerPublicKeyTest, NonRsaPem) {
+  EXPECT_THAT(DeserializeRsaPublicKeyPemAsDerPublicKey(kEcdsaPem),
               StatusIs(INTERNAL, HasSubstr("error converting PEM to RSA")));
 }
 
