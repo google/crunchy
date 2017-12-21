@@ -26,7 +26,7 @@
 
 namespace crunchy {
 
-// Returns the juxposition of x and y coordinates of the given point. A point
+// Returns the juxtaposition of x and y coordinates of the given point. A point
 // is big-endian serialized in the fewest number of bytes required to store
 // EC_GROUP_get_degree(group) bits.
 StatusOr<std::string> SerializePoint(const EC_GROUP* group, const EC_POINT* point);
@@ -40,6 +40,10 @@ StatusOr<openssl_unique_ptr<EC_POINT>> DeserializePoint(
 // SerializePoint to an EC public key.
 StatusOr<std::string> DeserializePointAsPemPublicKey(
     int curve_nid, absl::string_view serialized_point);
+
+// Converts public key in PEM format into DER format.
+StatusOr<std::string> DeserializeEcPublicKeyPemAsDerPublicKey(
+    absl::string_view public_key_pem);
 
 // Returns a private key as the exponent, big-endian serialized in the fewest
 // number of bytes required to store EC_GROUP_get_degree(group) bits.

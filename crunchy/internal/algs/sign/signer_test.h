@@ -108,11 +108,18 @@ inline void BadSignatureTest(const SignerFactory& factory) {
 
   CRUNCHY_EXPECT_OK(verifier->Verify(kMessage, signature));
 
+  // Corrupt individual bits
   for (size_t i = 0; i < signature.length(); i++) {
     std::string local_signature = signature;
     local_signature[i] ^= 0x01;
     EXPECT_FALSE(verifier->Verify(kMessage, local_signature).ok());
   }
+
+  // Short signature
+  EXPECT_FALSE(verifier
+                   ->Verify(kMessage, absl::string_view(signature.data(),
+                                                        signature.length() - 1))
+                   .ok());
 }
 
 inline void VerifyTestVector(const SignerFactory& factory,

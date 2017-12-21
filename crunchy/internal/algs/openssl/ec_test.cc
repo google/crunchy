@@ -94,6 +94,32 @@ TEST(EcTest, DeserializePointAsPemPublicKeyFailTest) {
   EXPECT_FALSE(status_or_pem.ok());
 }
 
+TEST(EcTest, DeserializeEcPublicKeyPemAsDerPublicKeyTest) {
+  std::string pem = R"(-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwBGNlbF0goYpExaNpo6UMeUwEPKM
+xkbM9ldzOXvYTrdhNZrffpkPFTHzeY4NgcHUsvXHzz5GMPc8tkajGI2pNQ==
+-----END PUBLIC KEY-----
+)";
+  std::string expected_der_hex =
+      "c0118d95b17482862913168da68e9431e53010f28cc646ccf65773397bd84eb7"
+      "61359adf7e990f1531f3798e0d81c1d4b2f5c7cf3e4630f73cb646a3188da935";
+  auto status_or_der = DeserializeEcPublicKeyPemAsDerPublicKey(pem);
+  CRUNCHY_EXPECT_OK(status_or_der.status());
+  std::string der = std::move(status_or_der.ValueOrDie());
+  EXPECT_EQ(der, absl::HexStringToBytes(expected_der_hex));
+}
+
+// Key has wrong header: -----INVALID PUBLIC KEY-----
+TEST(EcTest, DeserializeEcPublicKeyPemAsDerPublicKeyFailTest) {
+  std::string pem = R"(-----INVALID PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwBGNlbF0goYpExaNpo6UMeUwEPKM
+xkbM9ldzOXvYTrdhNZrffpkPFTHzeY4NgcHUsvXHzz5GMPc8tkajGI2pNQ==
+-----END PUBLIC KEY-----
+)";
+  auto status_or_point = DeserializeEcPublicKeyPemAsDerPublicKey(pem);
+  EXPECT_FALSE(status_or_point.ok());
+}
+
 TEST(EcTest, DeserializeSerializePrivateKeyTest) {
   std::string private_key_hex =
       "dc51d3866a15bacde33d96f992fca99da7e6ef0934e7097559c27f1614c88a7f";

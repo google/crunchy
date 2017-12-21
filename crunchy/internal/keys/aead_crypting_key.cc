@@ -57,8 +57,8 @@ class AeadCryptingKeyImpl : public AeadCryptingKey {
       return InvalidArgumentErrorBuilder(CRUNCHY_LOC).LogInfo()
              << "ciphertext is too small to hold a nonce";
     }
-    StringBuffer result(GetMaxPlaintextLength(ciphertext.size()) -
-                        GetNonceLength());
+    StringBuffer result(
+        GetMaxPlaintextLength(ciphertext.size() - GetNonceLength()));
     const uint8_t* nonce = reinterpret_cast<const uint8_t*>(ciphertext.data());
     auto status = crypter_->Decrypt(
         nonce, GetNonceLength(), reinterpret_cast<const uint8_t*>(aad.data()),

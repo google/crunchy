@@ -263,7 +263,7 @@ class ABSL_MUST_USE_RESULT StatusOr {
   StatusOr(const T& value) : value_(value) {}
   StatusOr(T&& value) : value_(std::move(value)) {}
 
-  const Status& status() const { return status_; }
+  ABSL_MUST_USE_RESULT const Status& status() const { return status_; }
   bool ok() const { return status_.ok(); }
 
   operator Status() const& { return status_; }

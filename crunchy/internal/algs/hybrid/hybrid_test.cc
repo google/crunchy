@@ -84,8 +84,6 @@ TEST_P(HybridCrypterTest, EncryptDecryptTest) {
       std::move(status_or_encrypter.ValueOrDie());
   EXPECT_NE(encrypter, nullptr);
 
-  std::string plaintext = RandString(42);
-
   auto status_or_decrypter = factory().MakeHybridDecrypter(private_key);
   CRUNCHY_EXPECT_OK(status_or_decrypter.status());
   std::unique_ptr<HybridDecrypterInterface> decrypter =
@@ -93,8 +91,7 @@ TEST_P(HybridCrypterTest, EncryptDecryptTest) {
 
   EncryptDecryptTest(*encrypter, *decrypter, RandString(42));
   EncryptDecryptTest(*encrypter, *decrypter, "");
-  EncryptDecryptTest(*encrypter, *decrypter, std::string(0x00, 42));
-  EncryptDecryptTest(*encrypter, *decrypter, std::string(0x00, 1024 * 1024));
+  EncryptDecryptTest(*encrypter, *decrypter, RandString(16 * 1024));
 }
 
 TEST_P(HybridCrypterTest, NullInputsTest) {

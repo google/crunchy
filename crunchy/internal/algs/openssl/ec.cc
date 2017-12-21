@@ -149,6 +149,34 @@ StatusOr<std::string> DeserializePointAsPemPublicKey(
   return {std::string(reinterpret_cast<const char*>(pem), pem_length)};
 }
 
+StatusOr<std::string> DeserializeEcPublicKeyPemAsDerPublicKey(
+    absl::string_view public_key_pem) {
+
+  openssl_unique_ptr<BIO> bio(BIO_new_mem_buf(&public_key_pem.data()[0],
+                                              public_key_pem.size()));
+  openssl_unique_ptr<EC_KEY> ec_key(
+      PEM_read_bio_EC_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
+  if (ec_key == nullptr) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error converting PEM to EC key: "
+           << GetOpensslErrors();
+  }
+
+  // group = ec_key_st->group
+  const EC_GROUP* group = EC_KEY_get0_group(ec_key.get());
+  if (group == nullptr) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error getting EC group: " << GetOpensslErrors();
+  }
+  // point = ec_key_st->pubkey
+  const EC_POINT* point = EC_KEY_get0_public_key(ec_key.get());
+  if (point == nullptr) {
+    return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
+           << "Openssl internal error getting EC point: " << GetOpensslErrors();
+  }
+  return SerializePoint(group, point);
+}
+
 StatusOr<std::string> SerializePrivateKey(const EC_GROUP* group, const EC_KEY* key) {
   size_t field_byte_length = GroupByteSize(group);
   const BIGNUM* private_key = EC_KEY_get0_private_key(key);

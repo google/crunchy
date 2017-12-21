@@ -165,6 +165,10 @@ class EcdsaVerifier : public VerifierInterface {
       case SignatureFormat::JWT: {
         sig.reset(ECDSA_SIG_new());
         size_t field_size = JwtFieldSize(curve_);
+        if (field_size * 2 != signature.length()) {
+          return FailedPreconditionErrorBuilder(CRUNCHY_LOC).LogInfo()
+                 << "Signature is the wrong size.";
+        }
         if (BN_bin2bn(reinterpret_cast<const uint8_t*>(signature.data()),
                       field_size, sig->r) == nullptr) {
           return InternalErrorBuilder(CRUNCHY_LOC).LogInfo()
