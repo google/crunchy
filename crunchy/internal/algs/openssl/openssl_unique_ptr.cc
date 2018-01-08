@@ -39,13 +39,6 @@ namespace crunchy {
 
 namespace internal {
 
-namespace {
-
-const char kErrorMessage[] =
-    "OpenSSL object deallocator returned an error status";
-
-}  // namespace
-
 ASN1_OBJECT* Make(Tag<ASN1_OBJECT>) { return ASN1_OBJECT_new(); }
 
 ASN1_STRING* Make(Tag<ASN1_STRING>) { return ASN1_STRING_new(); }
