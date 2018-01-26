@@ -26,6 +26,9 @@ namespace crunchy {
 // digest) signature. Requires that the key be exactly 32 bytes (full digest).
 const MacFactory& GetHmacSha256HalfDigestFactory();
 
+StatusOr<std::unique_ptr<MacFactory>> MakeHmacSha224Factory(
+    size_t key_length, size_t signature_length);
+
 StatusOr<std::unique_ptr<MacFactory>> MakeHmacSha256Factory(
     size_t key_length, size_t signature_length);
 

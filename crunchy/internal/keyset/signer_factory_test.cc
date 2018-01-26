@@ -21,6 +21,7 @@
 
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
+#include "absl/types/span.h"
 #include "crunchy/internal/algs/random/crypto_rand.h"
 #include "crunchy/internal/common/file.h"
 #include "crunchy/internal/common/init.h"
@@ -339,6 +340,10 @@ const char kTestDataPath[] =
     "crunchy/internal/keyset/testdata/"
     "signer_factory_test_vectors.proto.bin";
 
+const char kMvpTestDataPath[] =
+    "crunchy/internal/keyset/testdata/"
+    "signer_factory_mvp_test_vectors.proto.bin";
+
 void VerifyTestVector(const SigningKeyRegistry& registry,
                       const SignerFactoryTestVector& test_vector) {
   auto status_or_verifier =
@@ -358,6 +363,22 @@ TEST(KeysetFactoryTest, TestVectors) {
       GetProtoFromFile<SignerFactoryTestVectors>(kTestDataPath);
   CRUNCHY_EXPECT_OK(status_or_test_vectors.status())
       << "Couldn't load test vectors, try passing --gen_test_vectors=yes";
+  SignerFactoryTestVectors test_vectors =
+      std::move(status_or_test_vectors).ValueOrDie();
+
+  for (const SignerFactoryTestVector& test_vector :
+       test_vectors.test_vector()) {
+    VerifyTestVector(registry, test_vector);
+  }
+}
+
+TEST(KeysetFactoryTest, MvpTestVectors) {
+  const SigningKeyRegistry& registry = GetSigningKeyRegistry();
+
+  auto status_or_test_vectors =
+      GetProtoFromFile<SignerFactoryTestVectors>(kMvpTestDataPath);
+  CRUNCHY_EXPECT_OK(status_or_test_vectors.status())
+      << "Couldn't load test vectors, try passing --gen_test_vectors=yes --mvp";
   SignerFactoryTestVectors test_vectors =
       std::move(status_or_test_vectors).ValueOrDie();
 

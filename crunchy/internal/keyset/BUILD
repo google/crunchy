@@ -158,6 +158,7 @@ cc_test(
         "//crunchy/key_management:keyset_manager",
         "//crunchy/key_management/internal:advanced_keyset_manager",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
         "@com_google_googletest//:gtest",
     ],
 )

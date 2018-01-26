@@ -190,7 +190,7 @@ inline std::ostream& operator<<(std::ostream& os, const Status& x) {
 class ABSL_MUST_USE_RESULT StatusBuilder {
  public:
   StatusBuilder(Code code, source_location location)
-      : status_(code, ""),
+      : code_(code),
         line_(location.line()),
         file_(location.file_name()),
         log_severity_(INFO),
@@ -198,14 +198,14 @@ class ABSL_MUST_USE_RESULT StatusBuilder {
         log_type_(LogType::kDisabled) {}
 
   StatusBuilder& Log(LogSeverity severity) {
-    if (status_.ok()) return *this;
+    if (code_ == Code::OK) return *this;
     log_type_ = LogType::kLog;
     log_severity_ = severity;
     return *this;
   }
 
   StatusBuilder& VLog(int level) {
-    if (status_.ok()) return *this;
+    if (code_ == Code::OK) return *this;
     log_type_ = LogType::kVLog;
     log_verbose_level_ = level;
     return *this;
@@ -227,7 +227,7 @@ class ABSL_MUST_USE_RESULT StatusBuilder {
   }
 
   operator Status() const& {
-    Status status(status_.error_code(), stream_);
+    Status status(code_, stream_);
     if (log_type_ == LogType::kDisabled) return status;
     ::crunchy::internal::LogMessage log_message(file_, line_, log_severity_);
     log_message.stream() << status;
@@ -244,9 +244,9 @@ class ABSL_MUST_USE_RESULT StatusBuilder {
     kVLog,
   };
 
-  Status status_;
-  int line_;
-  const char* file_;
+  const Code code_;
+  const int line_;
+  const char* const file_;
   LogSeverity log_severity_;
   int log_verbose_level_;
   LogType log_type_;

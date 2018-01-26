@@ -165,6 +165,11 @@ const MacFactory& GetHmacSha256HalfDigestFactory() {
   return factory;
 }
 
+StatusOr<std::unique_ptr<MacFactory>> MakeHmacSha224Factory(
+    size_t key_length, size_t signature_length) {
+  return MakeFactory(EVP_sha224(), key_length, signature_length);
+}
+
 StatusOr<std::unique_ptr<MacFactory>> MakeHmacSha256Factory(
     size_t key_length, size_t signature_length) {
   return MakeFactory(EVP_sha256(), key_length, signature_length);

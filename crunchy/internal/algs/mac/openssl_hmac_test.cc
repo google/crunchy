@@ -46,6 +46,12 @@ std::vector<FactoryInfo<MacFactory>>* FactoryInfoVector() {
       {"HmacSha256", GetHmacSha256HalfDigestFactory(),
        "crunchy/internal/algs/mac/testdata/hmac_sha256.proto.bin"});
 
+  static const MacFactory& hmac_sha224_factory =
+      *MakeHmacSha224Factory(28, 14).ValueOrDie().release();
+  factories->push_back(
+      {"HmacSha224", hmac_sha224_factory,
+       "crunchy/internal/algs/mac/testdata/hmac_sha224.proto.bin"});
+
   static const MacFactory& hmac_sha384_factory =
       *MakeHmacSha384Factory(48, 24).ValueOrDie().release();
   factories->push_back(

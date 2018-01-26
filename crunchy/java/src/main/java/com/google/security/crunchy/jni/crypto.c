@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-#include "crunchy/java/src/main/java/com/google/security/crunchy/jni/crypto.h"
-
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 #include "crunchy/internal/bindings/crypto.h"
 #include "crunchy/internal/pure_c/crypto.h"
+#include "crunchy/java/src/main/java/com/google/security/crunchy/jni/com_google_security_crunchy_jni_CrunchyCrypterBindings.h"
+#include "crunchy/java/src/main/java/com/google/security/crunchy/jni/com_google_security_crunchy_jni_CrunchyHybridDecrypterBindings.h"
+#include "crunchy/java/src/main/java/com/google/security/crunchy/jni/com_google_security_crunchy_jni_CrunchyHybridEncrypterBindings.h"
+#include "crunchy/java/src/main/java/com/google/security/crunchy/jni/com_google_security_crunchy_jni_CrunchyMacerBindings.h"
+#include "crunchy/java/src/main/java/com/google/security/crunchy/jni/com_google_security_crunchy_jni_CrunchySignerBindings.h"
+#include "crunchy/java/src/main/java/com/google/security/crunchy/jni/com_google_security_crunchy_jni_CrunchyVerifierBindings.h"
 
 #ifdef __cplusplus
 extern "C" {

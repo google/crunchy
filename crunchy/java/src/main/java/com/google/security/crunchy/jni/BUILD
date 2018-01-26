@@ -40,8 +40,13 @@ java_library(
 cc_library(
     name = "crypto_bindings",
     srcs = [
+        "com_google_security_crunchy_jni_CrunchyCrypterBindings.h",
+        "com_google_security_crunchy_jni_CrunchyHybridDecrypterBindings.h",
+        "com_google_security_crunchy_jni_CrunchyHybridEncrypterBindings.h",
+        "com_google_security_crunchy_jni_CrunchyMacerBindings.h",
+        "com_google_security_crunchy_jni_CrunchySignerBindings.h",
+        "com_google_security_crunchy_jni_CrunchyVerifierBindings.h",
         "crypto.c",
-        "crypto.h",
     ],
     deps = [
         ":jni_deps",
