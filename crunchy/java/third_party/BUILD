@@ -20,6 +20,27 @@ package(
     default_visibility = ["//crunchy/java:internal_pkg"],
 )
 
+java_plugin(
+    name = "auto_annotation_plugin",
+    processor_class = "com.google.auto.value.processor.AutoAnnotationProcessor",
+    deps = ["@com_google_auto//jar"],
+)
+
+java_plugin(
+    name = "auto_value_plugin",
+    processor_class = "com.google.auto.value.processor.AutoValueProcessor",
+    deps = ["@com_google_auto//jar"],
+)
+
+java_library(
+    name = "auto_value",
+    exported_plugins = [
+        ":auto_annotation_plugin",
+        ":auto_value_plugin",
+    ],
+    exports = ["@com_google_auto//jar"],
+)
+
 java_library(
     name = "guava",
     exports = ["@com_google_guava//jar"],
@@ -32,5 +53,8 @@ java_library(
 
 java_library(
     name = "truth",
-    exports = ["@com_google_truth_truth//jar"],
+    exports = [
+        ":guava",
+        "@com_google_truth_truth//jar",
+    ],
 )

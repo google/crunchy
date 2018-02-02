@@ -49,6 +49,12 @@ http_archive(
 
 # Java
 maven_jar(
+    name = "com_google_auto",
+    artifact = "com.google.auto.value:auto-value:1.5.2",
+    sha1 = "1b94ab7ec707e2220a0d1a7517488d1843236345",
+)
+
+maven_jar(
     name = "com_google_guava",
     artifact = "com.google.guava:guava:21.0",
 )
@@ -61,6 +67,6 @@ maven_jar(
 
 maven_jar(
     name = "com_google_truth_truth",
-    artifact = "com.google.truth:truth:0.30",
-    sha1 = "9d591b5a66eda81f0b88cf1c748ab8853d99b18b",
+    artifact = "com.google.truth:truth:0.39",
+    sha1 = "bd1bf5706ff34eb7ff80fef8b0c4320f112ef899",
 )

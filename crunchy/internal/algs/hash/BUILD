@@ -61,7 +61,6 @@ cc_library(
     deps = [
         ":hash_interface",
         "//crunchy/util:status",
-        "@boringssl//:crypto",
         "@com_google_absl//absl/strings",
     ],
 )
