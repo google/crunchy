@@ -77,7 +77,7 @@ useful.
 ## Compatibility guarantees
 
 We do not offer any ABI compatibility. We will strive to not break API
-compatibility. If we plan to break API compability, we will provide a migration
+compatibility. If we plan to break API compatibility, we will provide a migration
 path.
 
 We ask that you:
